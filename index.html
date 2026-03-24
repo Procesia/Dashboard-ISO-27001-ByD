@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISO 27001:2022 — Sistema de Seguimiento</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Paleta base */
+  --navy:      #003049;
+  --teal:      #2F8091;
+  --slate:     #737A80;
+
+  /* Backgrounds — partiendo del navy oscurecido/aclarado */
+  --bg:        #f0f4f6;
+  --bg2:       #ffffff;
+  --bg3:       #e6ecef;
+  --bg4:       #d5e0e4;
+  --border:    rgba(0,48,73,0.10);
+  --border2:   rgba(0,48,73,0.20);
+
+  /* Texto */
+  --text:      #001f30;
+  --text2:     #4a6070;
+  --text3:     #737A80;
+
+  /* Empresa B → navy  |  Empresa D → teal */
+  --a-blue:    #003049;
+  --a-blue2:   #001f30;
+  --b-purple:  #2F8091;
+  --b-purple2: #1e6070;
+
+  /* Semáforo */
+  --green:     #1a7a50;
+  --amber:     #c47800;
+  --red:       #b83232;
+  --green-bg:  rgba(26,122,80,0.10);
+  --amber-bg:  rgba(196,120,0,0.10);
+  --red-bg:    rgba(184,50,50,0.10);
+
+  --radius:    8px;
+  --radius2:   12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── LAYOUT ── */
+.app { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 240px; flex-shrink: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; height: 100vh;
+  overflow-y: auto; z-index: 100;
+}
+.main { margin-left: 240px; flex: 1; padding: 32px; min-height: 100vh; }
+
+/* ── SIDEBAR ── */
+.sb-header {
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--navy);
+}
+.sb-logo {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800; font-size: 17px;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+}
+.sb-sub { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 3px; font-family: 'Montserrat', monospace; letter-spacing: 0.8px; text-transform: uppercase; }
+
+.sb-section { padding: 12px 12px 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text3); font-weight: 700; }
+.sb-nav { padding: 4px 12px; }
+.sb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: var(--radius);
+  color: var(--text2); cursor: pointer;
+  font-size: 13px; font-weight: 600;
+  transition: all .15s; border: none; background: none;
+  width: 100%; text-align: left;
+  font-family: 'Montserrat', sans-serif;
+}
+.sb-item:hover { background: var(--bg3); color: var(--text); }
+.sb-item.active { background: rgba(0,48,73,0.10); color: var(--navy); }
+.sb-item .icon { width: 18px; text-align: center; font-size: 15px; }
+
+
+.sb-emp-btn {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 8px 12px; border-radius: var(--radius);
+  border: 1.5px solid var(--border); background: var(--bg2);
+  cursor: pointer; font-family: 'Montserrat', sans-serif;
+  font-size: 12px; font-weight: 700; color: var(--text2);
+  margin-bottom: 6px; transition: all .15s;
+}
+.sb-emp-btn:hover { border-color: var(--border2); color: var(--text); }
+.sb-emp-btn.active-b { border-color: var(--navy); color: var(--navy); background: rgba(0,48,73,0.06); }
+.sb-emp-btn.active-d { border-color: var(--teal); color: var(--teal); background: rgba(47,128,145,0.06); }
+.sb-emp-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+
+.sb-footer { margin-top: auto; padding: 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text3); font-weight: 500; }
+
+/* ── PAGES ── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── PAGE HEADER ── */
+.page-header { margin-bottom: 28px; }
+.page-header h1 { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -0.3px; color: var(--navy); }
+.page-header p { color: var(--text2); margin-top: 4px; font-size: 13px; font-weight: 500; }
+
+/* ── CARDS GRID ── */
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.kpi-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius2); padding: 20px;
+  transition: border-color .15s; box-shadow: 0 1px 4px rgba(0,48,73,0.06);
+}
+.kpi-card:hover { border-color: var(--border2); }
+.kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text3); margin-bottom: 8px; font-weight: 700; font-family: 'Montserrat', sans-serif; }
+.kpi-val { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 36px; line-height: 1; }
+.kpi-val.green { color: var(--green); }
+.kpi-val.amber { color: var(--amber); }
+.kpi-val.red   { color: var(--red); }
+.kpi-val.blue  { color: var(--navy); }
+.kpi-val.purple{ color: var(--teal); }
+.kpi-sub { font-size: 11px; color: var(--text3); margin-top: 6px; font-weight: 500; }
+
+/* ── EMPRESA BADGE ── */
+.empresa-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: .8px;
+  margin-bottom: 20px; text-transform: uppercase;
+}
+.badge-b { background: var(--navy); color: #ffffff; }
+.badge-d { background: var(--teal); color: #ffffff; }
+
+/* ── PROGRESS BAR ── */
+.prog-wrap { background: var(--bg4); border-radius: 20px; height: 6px; overflow: hidden; }
+.prog-bar { height: 100%; border-radius: 20px; transition: width .4s; }
+.prog-bar.a { background: var(--navy); }
+.prog-bar.b { background: var(--teal); }
+.prog-bar.green { background: var(--green); }
+.prog-bar.amber { background: var(--amber); }
+.prog-bar.red   { background: var(--red); }
+
+/* ── STATUS PILL ── */
+.pill {
+  display: inline-block; padding: 2px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.pill.concluido, .pill.implementado { background: var(--green-bg); color: var(--green); }
+.pill.en-proceso { background: var(--amber-bg); color: var(--amber); }
+.pill.por-iniciar { background: var(--red-bg); color: var(--red); }
+
+/* ── TABLE ── */
+.table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); overflow-x: auto; overflow-y: visible; }
+.table-toolbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.search-input {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); border-radius: var(--radius);
+  padding: 8px 14px; font-size: 13px; flex: 1; min-width: 180px;
+  font-family: 'Montserrat', sans-serif;
+  transition: border-color .15s;
+}
+.search-input:focus { outline: none; border-color: var(--navy); }
+.filter-select {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); border-radius: var(--radius);
+  padding: 8px 12px; font-size: 13px;
+  font-family: 'Montserrat', sans-serif; cursor: pointer;
+}
+.filter-select:focus { outline: none; border-color: var(--navy); }
+
+table { width: 100%; min-width: 1100px; border-collapse: collapse; }
+th {
+  text-align: left; padding: 10px 16px;
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3); white-space: nowrap;
+  font-family: 'Montserrat', sans-serif;
+}
+td { padding: 11px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 13px; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(0,48,73,0.02); }
+.clause-row td {
+  background: var(--navy); color: rgba(255,255,255,0.85);
+  font-family: 'Montserrat', sans-serif; font-weight: 700;
+  font-size: 11px; letter-spacing: .8px; padding: 8px 16px;
+  border-bottom: 1px solid var(--border); text-transform: uppercase;
+}
+
+/* ── SELECT EN TABLA ── */
+.status-select {
+  background: transparent; border: none; color: inherit;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  font-family: 'Montserrat', sans-serif; padding: 0;
+  border-radius: 20px; outline: none;
+}
+.status-cell { display: flex; align-items: center; }
+
+/* ── BTN ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: var(--radius);
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  border: none; font-family: 'Montserrat', sans-serif;
+  transition: all .15s; text-decoration: none; letter-spacing: 0.3px;
+}
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-primary:hover { background: var(--a-blue2); }
+.btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--text); border-color: var(--border2); }
+.btn-green { background: var(--green); color: #fff; }
+.btn-sm { padding: 5px 12px; font-size: 11px; }
+
+/* ── COMPARATIVO ── */
+.comp-row {
+  display: grid; grid-template-columns: 60px 1fr 160px 160px 100px;
+  gap: 0; align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  transition: background .1s;
+}
+.comp-row:hover { background: rgba(0,48,73,0.02); }
+.comp-row.header-row {
+  background: var(--bg3); font-size: 10px; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--text3); font-weight: 700;
+  padding: 10px 16px; font-family: 'Montserrat', sans-serif;
+}
+.comp-row.clause-sep {
+  background: var(--navy); grid-template-columns: 1fr;
+  font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 11px;
+  color: rgba(255,255,255,0.8); letter-spacing: 1px; text-transform: uppercase;
+}
+.gap-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 6px;
+  font-size: 11px; font-weight: 700; font-family: 'Montserrat', monospace;
+}
+.gap-ok   { background: var(--green-bg); color: var(--green); }
+.gap-warn { background: var(--amber-bg); color: var(--amber); }
+.gap-crit { background: var(--red-bg);   color: var(--red); }
+
+/* ── BACKLOG ── */
+.backlog-item {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius2); padding: 16px 20px;
+  margin-bottom: 10px; transition: border-color .15s;
+  box-shadow: 0 1px 3px rgba(0,48,73,0.05);
+}
+.backlog-item:hover { border-color: var(--border2); }
+.backlog-top { display: flex; align-items: flex-start; gap: 12px; }
+.backlog-check {
+  width: 20px; height: 20px; border-radius: 6px;
+  border: 2px solid var(--border2); background: transparent;
+  cursor: pointer; flex-shrink: 0; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.backlog-check.done { background: var(--green); border-color: var(--green); }
+.backlog-body { flex: 1; }
+.backlog-title { font-weight: 600; margin-bottom: 4px; }
+.backlog-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.backlog-meta span { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 4px; font-weight: 500; }
+.backlog-meta span.overdue { color: var(--red); }
+.backlog-actions { display: flex; gap: 8px; margin-left: auto; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,20,35,0.6); z-index: 1000;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--radius2); padding: 28px;
+  width: 500px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,48,73,0.15);
+}
+.modal h2 { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 18px; margin-bottom: 20px; color: var(--navy); }
+.form-row { margin-bottom: 14px; }
+.form-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; display: block; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); border-radius: var(--radius); padding: 9px 12px;
+  font-size: 13px; font-family: 'Montserrat', sans-serif;
+  transition: border-color .15s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--navy); }
+.form-textarea { min-height: 80px; resize: vertical; }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+/* ── DUAL PROGRESS ── */
+.dual-prog { display: flex; flex-direction: column; gap: 4px; }
+.dual-prog-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+.dual-prog-label { width: 14px; font-weight: 700; }
+.dual-prog-label.a { color: var(--navy); }
+.dual-prog-label.b { color: var(--teal); }
+.dual-prog-bar-wrap { flex: 1; background: var(--bg4); border-radius: 20px; height: 5px; overflow: hidden; }
+.dual-prog-pct { width: 32px; text-align: right; font-family: 'Montserrat', monospace; color: var(--text3); font-size: 10px; }
+
+/* ── SECTION HEADER ── */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
+}
+.section-title { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 16px; color: var(--navy); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--navy); border: 1px solid var(--teal);
+  color: #fff; padding: 12px 20px; border-radius: var(--radius);
+  font-size: 13px; font-weight: 600; z-index: 9999;
+  transform: translateY(80px); opacity: 0;
+  transition: all .3s; pointer-events: none;
+  font-family: 'Montserrat', sans-serif;
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── EDIT INPUT IN TABLE ── */
+.inline-input {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); border-radius: 6px; padding: 4px 8px;
+  font-size: 12px; width: 100%; font-family: 'Montserrat', sans-serif;
+}
+.inline-input:focus { outline: none; border-color: var(--navy); }
+
+/* ── CHART BAR ── */
+.chart-bar-group { margin-bottom: 14px; }
+.chart-bar-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; display: flex; justify-content: space-between; font-weight: 500; }
+.chart-bar-track { background: var(--bg4); border-radius: 20px; height: 10px; overflow: hidden; position: relative; }
+.chart-bar-fill-a { position: absolute; left: 0; top: 0; height: 100%; border-radius: 20px; background: var(--navy); transition: width .5s; }
+.chart-bar-fill-b { position: absolute; left: 0; top: 0; height: 100%; border-radius: 20px; background: var(--teal); opacity: .75; transition: width .5s; }
+
+
+.badge-d { background: var(--teal); color: #ffffff; }
+.sb-empresa.active-d { border-color: var(--teal); background: rgba(47,128,145,0.06); }
+.sb-empresa.active-d .sb-empresa-name { color: var(--teal); }
+
+
+.dash-seg-btn {
+  padding: 6px 14px; border-radius: 6px; border: 1.5px solid var(--border2);
+  font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 700;
+  cursor: pointer; background: var(--bg2); color: var(--text2);
+  transition: all .15s; text-transform: uppercase; letter-spacing: .5px;
+}
+.dash-seg-btn:hover { border-color: var(--navy); color: var(--navy); }
+.dash-seg-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .sidebar { width: 200px; }
+  .main { margin-left: 200px; padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-header">
+    <div class="sb-logo">ISO 27001</div>
+    <div class="sb-sub">Sistema de Seguimiento · 2026</div>
+  </div>
+
+  <div class="sb-section">Navegación</div>
+  <div class="sb-nav">
+    <button class="sb-item active" id="nav-dashboard" onclick="goPage('dashboard')"><span class="icon">⬛</span> Dashboard</button>
+    <button class="sb-item" id="nav-clausulas" onclick="goPage('clausulas')"><span class="icon">≡</span> Cláusulas ISO</button>
+    <button class="sb-item" id="nav-soa" onclick="goPage('soa')"><span class="icon">✦</span> SoA Anexo A</button>
+    <button class="sb-item" id="nav-backlog" onclick="goPage('backlog')"><span class="icon">◈</span> Backlog</button>
+  </div>
+
+  <div class="sb-section" style="margin-top:4px;">Empresa activa</div>
+  <div style="padding:4px 12px 8px;">
+    <button class="sb-emp-btn active-b" id="sb-btn-b" onclick="setSbEmpresa('B')">
+      <span class="sb-emp-dot" style="background:var(--navy)"></span>
+      <span id="sb-label-b">Empresa B</span>
+    </button>
+    <button class="sb-emp-btn" id="sb-btn-d" onclick="setSbEmpresa('D')">
+      <span class="sb-emp-dot" style="background:var(--teal)"></span>
+      <span id="sb-label-d">Empresa D</span>
+    </button>
+  </div>
+
+  <div class="sb-section" style="margin-top:8px;">Exportar</div>
+  <div class="sb-nav">
+    <button class="sb-item" onclick="document.getElementById('file-import').click()"><span class="icon">↑</span> Importar Excel</button>
+    <input type="file" id="file-import" accept=".xlsx,.csv,.json" style="display:none" onchange="importarArchivo(this)">
+    <button class="sb-item" onclick="exportarCSV()"><span class="icon">↓</span> CSV</button>
+    <button class="sb-item" onclick="exportarJSON()"><span class="icon">{ }</span> JSON</button>
+    <button class="sb-item" onclick="window.print()"><span class="icon">⎙</span> PDF / Imprimir</button>
+  </div>
+
+  <div class="sb-footer">Datos guardados localmente.<br>Sin servidor. Sin login.</div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ═══════════════════════════════ DASHBOARD ═══════════════════════════════ -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h1>Dashboard General</h1>
+      <p>Cumplimiento ISO 27001:2022 — vista consolidada</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;">Ver:</span>
+      <button class="dash-seg-btn active" id="seg-ambas" onclick="setDashSeg('ambas')">Ambas</button>
+      <button class="dash-seg-btn" id="seg-b" onclick="setDashSeg('B')">Empresa B</button>
+      <button class="dash-seg-btn" id="seg-d" onclick="setDashSeg('D')">Empresa D</button>
+    </div>
+  </div>
+
+  <!-- Donuts globales -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-bottom:28px;" id="donuts-container"></div>
+
+  <!-- KPIs detalle -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;" id="kpis-container"></div>
+
+  <!-- Barras por cláusula -->
+  <div class="section-header">
+    <div class="section-title">Avance por Cláusula ISO</div>
+  </div>
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);padding:24px;" id="chart-clausulas"></div>
+</div>
+
+<!-- ═══════════════════════════════ CLÁUSULAS ═══════════════════════════════ -->
+<div class="page" id="page-clausulas">
+  <div class="page-header">
+    <h1>Cláusulas ISO 27001</h1>
+    <p>Requisitos de la norma (cláusulas 4–10)</p>
+  </div>
+  <div id="empresa-indicator-clausulas"></div>
+  <div class="table-wrap">
+    <div class="table-toolbar">
+      <input class="search-input" placeholder="🔍 Buscar cláusula o entregable..." oninput="filtrarClausulas(this.value)">
+      <select class="filter-select" onchange="filtrarClausulaEstatus(this.value)">
+        <option value="">Todos los estatus</option>
+        <option value="Por iniciar">Por iniciar</option>
+        <option value="En Proceso">En Proceso</option>
+        <option value="Concluido">Concluido</option>
+      </select>
+      <select class="filter-select" onchange="filtrarClausulaNum(this.value)" id="filter-clausula-num">
+        <option value="">Todas las cláusulas</option>
+        <option value="4">Cláusula 4</option>
+        <option value="5">Cláusula 5</option>
+        <option value="6">Cláusula 6</option>
+        <option value="7">Cláusula 7</option>
+        <option value="8">Cláusula 8</option>
+        <option value="9">Cláusula 9</option>
+        <option value="10">Cláusula 10</option>
+      </select>
+    </div>
+    <table id="tabla-clausulas">
+      <thead><tr>
+        <th>Cláusula</th>
+        <th>Requisito de la norma</th>
+        <th>Entregable</th>
+        <th>Qué evidenciar</th>
+        <th>Área Funcional</th>
+        <th>Responsable</th>
+        <th>Estatus</th>
+        <th>Entregado por Procesia</th>
+        <th>Aprobado por Empresa</th>
+        <th>Comentarios</th>
+      </tr></thead>
+      <tbody id="tbody-clausulas"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SOA ═══════════════════════════════ -->
+<div class="page" id="page-soa">
+  <div class="page-header">
+    <h1>Statement of Applicability</h1>
+    <p>93 controles del Anexo A — ISO 27001:2022</p>
+  </div>
+  <div id="empresa-indicator-soa"></div>
+  <div class="table-wrap">
+    <div class="table-toolbar">
+      <input class="search-input" placeholder="🔍 Buscar control..." oninput="filtrarSoA(this.value)">
+      <select class="filter-select" onchange="filtrarSoAEstatus(this.value)">
+        <option value="">Todos los estatus</option>
+        <option value="Por iniciar">Por iniciar</option>
+        <option value="En Proceso">En Proceso</option>
+        <option value="Implementado">Implementado</option>
+      </select>
+      <select class="filter-select" onchange="filtrarSoAGrupo(this.value)">
+        <option value="">Todos los grupos</option>
+        <option value="5">5 – Organizacionales</option>
+        <option value="6">6 – Personas</option>
+        <option value="7">7 – Físicos</option>
+        <option value="8">8 – Tecnológicos</option>
+      </select>
+    </div>
+    <table id="tabla-soa">
+      <thead><tr>
+        <th>Control</th>
+        <th>Requisito de la norma</th>
+        <th>Nombre del control</th>
+        <th>Qué evidenciar</th>
+        <th>Área Funcional</th>
+        <th>Responsable</th>
+        <th>Estatus</th>
+        <th>Entregado por Procesia</th>
+        <th>Aprobado por Empresa</th>
+        <th>Comentarios</th>
+      </tr></thead>
+      <tbody id="tbody-soa"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ BACKLOG ═══════════════════════════════ -->
+<div class="page" id="page-backlog">
+  <div class="page-header">
+    <h1>Backlog</h1>
+    <p>Gestión de pendientes y tareas con fechas</p>
+  </div>
+  <div id="empresa-indicator-backlog"></div>
+  <div class="section-header">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <select class="filter-select" onchange="filtrarBacklog(this.value)">
+        <option value="">Todos</option>
+        <option value="Por iniciar">Por iniciar</option>
+        <option value="En Proceso">En Proceso</option>
+        <option value="Terminado">Terminado</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="abrirModalBacklog()">+ Nueva tarea</button>
+  </div>
+  <div id="backlog-list"></div>
+</div>
+
+</main>
+</div>
+
+<!-- MODAL BACKLOG -->
+<div class="modal-overlay" id="modal-backlog">
+  <div class="modal">
+    <h2>Nueva tarea</h2>
+    <div class="form-row">
+      <label class="form-label">Descripción *</label>
+      <textarea class="form-textarea" id="bl-desc" placeholder="¿Qué hay que hacer?"></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="form-row">
+        <label class="form-label">Responsable</label>
+        <input class="form-input" id="bl-resp" placeholder="Nombre">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Fecha compromiso</label>
+        <input class="form-input" type="date" id="bl-fecha">
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Estatus</label>
+      <select class="form-select" id="bl-status">
+        <option>Por iniciar</option>
+        <option>En Proceso</option>
+        <option>Terminado</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Observaciones</label>
+      <textarea class="form-textarea" id="bl-obs" placeholder="Notas adicionales..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarBacklogItem()">Guardar tarea</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">✓ Guardado</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  DATOS BASE
+// ═══════════════════════════════════════════════════════════════════
+
+const CLAUSULAS_DESC = {4:"Contexto",5:"Liderazgo",6:"Planificación",7:"Soporte",8:"Operación",9:"Evaluación",10:"Mejora"};
+
+const CLAUSULAS_BASE = [
+  // CLÁUSULA 4 — CONTEXTO
+  {id:"4.1",c:4,sub:"4.1 Entendiendo la Organización y su contexto",
+   req:"La organización debe determinar los factores externos e internos que son pertinentes para su propósito y que afectan a su capacidad para lograr los resultados previstos del SGSI.",
+   evidencia:"Análisis FODA documentado, Misión y Visión actualizadas, Manual del SGSI sección 4.1.",
+   como:"Manual del SGSI > 4.1 + Misión, Visión, FODA",area:"Dirección General"},
+  {id:"4.2",c:4,sub:"4.2 Necesidades y expectativas de las partes interesadas",
+   req:"Identificar las partes interesadas relevantes y sus requisitos en materia de seguridad de la información.",
+   evidencia:"Matriz de partes interesadas con nombre, expectativas y requisitos de seguridad documentados.",
+   como:"Manual SGSI > 4.2 → Matriz de necesidades",area:"Dirección General"},
+  {id:"4.3",c:4,sub:"4.3 Alcance del SGSI",
+   req:"Determinar los límites y la aplicabilidad del SGSI para establecer su alcance.",
+   evidencia:"Documento de alcance aprobado que delimita procesos, áreas, ubicaciones y tecnologías cubiertas.",
+   como:"Manual SGSI > 4.3 Alcance del SIG",area:"Calidad / Certificaciones"},
+  {id:"4.4",c:4,sub:"4.4 Sistema de Gestión y sus Procesos",
+   req:"Establecer, implementar, mantener y mejorar continuamente el SGSI de acuerdo con los requisitos de la norma.",
+   evidencia:"Mapa de macroprocesos del SGSI, listado de procesos y su interacción documentada.",
+   como:"Manual SGSI > 4.4 → Macroproceso",area:"Calidad / Certificaciones"},
+  // CLÁUSULA 5 — LIDERAZGO
+  {id:"5.1",c:5,sub:"5.1 Liderazgo y Compromiso",
+   req:"La alta dirección debe demostrar liderazgo y compromiso con respecto al SGSI.",
+   evidencia:"Acta de compromiso de la dirección, comunicados firmados, asignación de recursos documentada.",
+   como:"Manual SIG > 5.1. Liderazgo y Compromiso",area:"Dirección General"},
+  {id:"5.2",c:5,sub:"5.2 Política de Seguridad de la Información",
+   req:"La alta dirección debe establecer una política de seguridad de la información apropiada al propósito de la organización.",
+   evidencia:"Política de SI publicada, fechada, firmada por la dirección y comunicada a todo el personal.",
+   como:"Manual SGSI > Política del SGSI",area:"Dirección General"},
+  {id:"5.3a",c:5,sub:"5.3 Roles y responsabilidades — Manual",
+   req:"Asignar y comunicar roles y responsabilidades para la seguridad de la información.",
+   evidencia:"Manual SIG con sección de roles y responsabilidades del SGSI definida y publicada.",
+   como:"Manual SIG > 5.3 Roles y Responsabilidades",area:"Dirección General"},
+  {id:"5.3b",c:5,sub:"5.3 Matriz de Asignación de roles",
+   req:"Documentar formalmente las responsabilidades asignadas a cada rol del SGSI.",
+   evidencia:"Matriz RACI o equivalente con roles, personas asignadas y alcance de responsabilidad.",
+   como:"Matriz de Asignación de roles",area:"Dirección General"},
+  {id:"5.3c",c:5,sub:"5.3 Cartas de formalización de roles",
+   req:"Formalizar por escrito la aceptación y conocimiento de los roles asignados.",
+   evidencia:"Cartas firmadas por cada responsable de rol del SGSI con fecha y descripción de funciones.",
+   como:"Cartas de formalización de roles y responsabilidades",area:"Dirección General"},
+  // CLÁUSULA 6 — PLANIFICACIÓN
+  {id:"6.1",c:6,sub:"6.1 Planificación general",
+   req:"Planificar las acciones para abordar riesgos y oportunidades del SGSI.",
+   evidencia:"Documento de planificación del SGSI con objetivos, riesgos identificados y planes de acción.",
+   como:"Manual SGSI > 6.1 Planificación",area:"Calidad / Certificaciones"},
+  {id:"6.1.1",c:6,sub:"6.1.1 Acciones para abordar riesgos y oportunidades",
+   req:"Determinar los riesgos y oportunidades que deben abordarse para asegurar que el SGSI logre sus resultados previstos.",
+   evidencia:"Metodología de evaluación de riesgos documentada, criterios de aceptación definidos.",
+   como:"Gestión de riesgos y oportunidades",area:"Calidad / Certificaciones"},
+  {id:"6.1.2",c:6,sub:"6.1.2 Evaluación de riesgos de Seguridad de la Información",
+   req:"Aplicar el proceso de evaluación de riesgos para identificar, analizar y evaluar riesgos de SI.",
+   evidencia:"Matriz de riesgos con activos, amenazas, vulnerabilidades, probabilidad, impacto y nivel de riesgo.",
+   como:"Matriz de Gestión de riesgos y oportunidades",area:"Calidad / Certificaciones"},
+  {id:"6.1.3",c:6,sub:"6.1.3 Tratamiento de riesgos de Seguridad de la Información",
+   req:"Seleccionar opciones de tratamiento, determinar controles necesarios y producir el SoA.",
+   evidencia:"Plan de tratamiento de riesgos con controles seleccionados, responsables, fechas y SoA aprobado.",
+   como:"Matriz de Gestión de riesgos y oportunidades",area:"Calidad / Certificaciones"},
+  {id:"6.2",c:6,sub:"6.2 Objetivos de SI y planificación",
+   req:"Establecer objetivos de seguridad de la información medibles y consistentes con la política.",
+   evidencia:"Documento de objetivos del SGSI con indicadores, metas, responsables y plazos definidos.",
+   como:"Documento de Objetivos del SGSI y planificación",area:"Calidad / Certificaciones"},
+  {id:"6.3a",c:6,sub:"6.3 Planificación de cambios — Procedimiento",
+   req:"Los cambios al SGSI deben planificarse y llevarse a cabo de manera controlada.",
+   evidencia:"Procedimiento de gestión del cambio con flujo de autorización, evaluación de impacto y rollback.",
+   como:"Procedimiento para la Gestión del cambio",area:"TI"},
+  {id:"6.3b",c:6,sub:"6.3 Formatos RFC y Plan de RollBack",
+   req:"Registrar y controlar cada cambio mediante solicitudes formales y planes de contingencia.",
+   evidencia:"Formatos RFC completados, planes de rollback documentados y registros de pruebas PIR.",
+   como:"Formatos RFC, Plan de RollBack, Pruebas PIR",area:"TI"},
+  // CLÁUSULA 7 — SOPORTE
+  {id:"7.1a",c:7,sub:"7.1 Recursos — Manual SGSI",
+   req:"Determinar y proporcionar los recursos necesarios para el establecimiento, implementación y mejora del SGSI.",
+   evidencia:"Sección de recursos del Manual SGSI con descripción de recursos humanos, técnicos y financieros.",
+   como:"Manual SIG capítulo > 7.1",area:"Dirección General"},
+  {id:"7.1b",c:7,sub:"7.1 Presupuesto Anual de Seguridad",
+   req:"Asignar presupuesto específico para las actividades y controles del SGSI.",
+   evidencia:"Documento de presupuesto anual aprobado con partidas asignadas al SGSI.",
+   como:"Documento para el Presupuesto Anual",area:"Finanzas"},
+  {id:"7.1c",c:7,sub:"7.1 Modelo financiero de proyectos SGSI",
+   req:"Planificar financieramente los proyectos de implementación y mejora de controles.",
+   evidencia:"Hoja de trabajo con costo-beneficio de proyectos de seguridad, aprobada por finanzas.",
+   como:"Hoja de trabajo para el presupuesto y modelo financiero",area:"Finanzas"},
+  {id:"7.2a",c:7,sub:"7.2 Competencia — Descriptivo de puesto",
+   req:"Determinar la competencia necesaria de las personas que trabajan bajo el control de la organización y que afectan al desempeño del SGSI.",
+   evidencia:"Descriptivos de puesto actualizados con competencias de SI requeridas por rol.",
+   como:"Perfil descriptivo de puesto",area:"Recursos Humanos"},
+  {id:"7.2b",c:7,sub:"7.2 Procedimiento selección de personal",
+   req:"Asegurar que el personal contratado tenga las competencias necesarias para sus responsabilidades de SI.",
+   evidencia:"Procedimiento de reclutamiento y selección con criterios de evaluación de competencias de seguridad.",
+   como:"Procedimiento para la selección de personal técnica",area:"Recursos Humanos"},
+  {id:"7.2c",c:7,sub:"7.2 Plan de desarrollo y medición de competencias",
+   req:"Tomar acciones para adquirir la competencia necesaria y evaluar su efectividad.",
+   evidencia:"Plan anual de capacitación, evaluaciones de competencia aplicadas y registro de resultados.",
+   como:"Plan de desarrollo, medición de competencias y ambiente laboral",area:"Recursos Humanos"},
+  {id:"7.3",c:7,sub:"7.3 Conciencia en Seguridad de la Información",
+   req:"El personal debe ser consciente de la política de SI, su contribución y las implicaciones de no cumplirla.",
+   evidencia:"Programa de concientización, evidencias de capacitación, listas de asistencia, evaluaciones.",
+   como:"Procedimiento de capacitación",area:"Recursos Humanos"},
+  {id:"7.4",c:7,sub:"7.4 Comunicación institucional",
+   req:"Determinar las comunicaciones internas y externas pertinentes al SGSI (qué, cuándo, a quién, cómo).",
+   evidencia:"Plan de comunicación del SGSI con canales, frecuencia, destinatarios y registros de comunicados.",
+   como:"Procedimiento de Comunicación institucional",area:"Comunicación"},
+  {id:"7.5a",c:7,sub:"7.5 Control de información documentada",
+   req:"El SGSI debe incluir la información documentada requerida por la norma y la determinada como necesaria.",
+   evidencia:"Procedimiento de control documental con ciclo de vida, versiones, aprobaciones y distribución.",
+   como:"Procedimiento de Control documental",area:"Calidad / Certificaciones"},
+  {id:"7.5.1",c:7,sub:"7.5.1 General — Manual SGSI",
+   req:"La información documentada requerida debe estar disponible, ser adecuada y estar protegida.",
+   evidencia:"Manual del SGSI capítulo 7.5.1 publicado y accesible al personal relevante.",
+   como:"Manual del SGSI. Capítulo 7.5.1",area:"Calidad / Certificaciones"},
+  {id:"7.5.2",c:7,sub:"7.5.2 Creación y actualización de documentos",
+   req:"Al crear y actualizar información documentada, asegurar identificación, descripción, formato y revisión adecuados.",
+   evidencia:"Guía de buenas prácticas de documentación con plantillas, nomenclatura y flujo de aprobación.",
+   como:"Documento de buenas prácticas de documentación",area:"Calidad / Certificaciones"},
+  {id:"7.5.3",c:7,sub:"7.5.3 Control de la información documentada",
+   req:"Controlar que la información documentada esté disponible, protegida y se gestione adecuadamente.",
+   evidencia:"Listado maestro de documentos del SGSI con versión vigente, responsable y fecha de revisión.",
+   como:"Listado de documentos SGSI",area:"Calidad / Certificaciones"},
+  // CLÁUSULA 8 — OPERACIÓN
+  {id:"8.0",c:8,sub:"8.0 Operación — Manual SGSI",
+   req:"Planificar, implementar, controlar y revisar los procesos necesarios para cumplir los requisitos de SI.",
+   evidencia:"Manual SGSI capítulo 8 con descripción de controles operativos implementados.",
+   como:"Manual del SGSI. Capítulo 8",area:"TI"},
+  {id:"8.1",c:8,sub:"8.1 Planificación y Control Operacional",
+   req:"Implementar los planes para abordar los riesgos y oportunidades, y controlar los cambios.",
+   evidencia:"Planes operativos de seguridad documentados, registros de controles aplicados y revisiones periódicas.",
+   como:"Matriz de Gestión de riesgos y oportunidades",area:"TI"},
+  {id:"8.2",c:8,sub:"8.2 Evaluación de riesgos de SI — Operativa",
+   req:"Realizar evaluaciones de riesgos de SI a intervalos planificados o cuando ocurran cambios significativos.",
+   evidencia:"Registros de evaluaciones de riesgo con fecha, metodología aplicada y resultados documentados.",
+   como:"Matriz de Gestión de riesgos y oportunidades",area:"TI"},
+  {id:"8.3",c:8,sub:"8.3 Tratamiento de riesgos de SI — Operativo",
+   req:"Implementar el plan de tratamiento de riesgos y conservar evidencia de los resultados.",
+   evidencia:"Evidencias de implementación de controles: configuraciones, procedimientos, registros de actividades.",
+   como:"Matriz de Gestión de riesgos y oportunidades",area:"TI"},
+  // CLÁUSULA 9 — EVALUACIÓN
+  {id:"9.0",c:9,sub:"9.0 Evaluación del Desempeño — Manual",
+   req:"Evaluar el desempeño de la seguridad de la información y la eficacia del SGSI.",
+   evidencia:"Manual SGSI capítulo 9 con descripción del proceso de evaluación y métricas definidas.",
+   como:"Manual del SGSI. Capítulo 9",area:"Calidad / Certificaciones"},
+  {id:"9.1",c:9,sub:"9.1 Monitoreo, medición, análisis y evaluación",
+   req:"Determinar qué se necesita monitorear y medir, los métodos de análisis y cuándo se evaluarán los resultados.",
+   evidencia:"Tablero o reporte de indicadores de seguridad con valores, tendencias y acciones derivadas.",
+   como:"Procedimiento para la Gestión de indicadores",area:"Calidad / Certificaciones"},
+  {id:"9.2",c:9,sub:"9.2 Auditoría Interna — Procedimiento",
+   req:"Realizar auditorías internas a intervalos planificados para verificar que el SGSI cumple requisitos.",
+   evidencia:"Procedimiento de auditoría interna del SGSI aprobado con criterios, alcance y frecuencia.",
+   como:"Procedimiento de Auditoría interna",area:"Calidad / Certificaciones"},
+  {id:"9.2.1",c:9,sub:"9.2.1 Auditoría interna — Manual",
+   req:"Documentar y conservar evidencia del programa de auditoría y sus resultados.",
+   evidencia:"Manual SGSI 9.2.1 con descripción de competencias del auditor y criterios de independencia.",
+   como:"Manual del SGSI. Capítulo 9.2.1",area:"Calidad / Certificaciones"},
+  {id:"9.2.2",c:9,sub:"9.2.2 Programa de auditoría interna",
+   req:"Planificar, establecer, implementar y mantener un programa de auditoría.",
+   evidencia:"Programa anual de auditorías con fechas, auditores asignados, alcance y hallazgos documentados.",
+   como:"Formato para programa de auditoría interna",area:"Calidad / Certificaciones"},
+  {id:"9.3",c:9,sub:"9.3 Revisión por la Dirección — Procedimiento",
+   req:"La alta dirección debe revisar el SGSI a intervalos planificados para asegurar su idoneidad y eficacia.",
+   evidencia:"Procedimiento de revisión por la dirección con entradas, proceso y salidas requeridas.",
+   como:"Procedimiento de Revisión por la dirección",area:"Dirección General"},
+  {id:"9.3.1",c:9,sub:"9.3.1 General — Manual",
+   req:"La revisión por la dirección debe considerar el estado de acciones de revisiones anteriores.",
+   evidencia:"Manual SGSI 9.3.1 con descripción del proceso y responsabilidades de la revisión directiva.",
+   como:"Manual del SGSI. Capítulo 9.3.1",area:"Dirección General"},
+  {id:"9.3.2",c:9,sub:"9.3.2 Entradas de la revisión por la dirección",
+   req:"Las entradas de la revisión deben incluir: estado de acciones previas, cambios, desempeño del SGSI y oportunidades de mejora.",
+   evidencia:"Presentación o informe de revisión con todas las entradas requeridas por la norma documentadas.",
+   como:"Formato para Presentación de Revisión por la Dirección",area:"Dirección General"},
+  {id:"9.3.3",c:9,sub:"9.3.3 Salidas de la revisión por la dirección",
+   req:"Las salidas deben incluir decisiones y acciones relacionadas con mejora continua y recursos.",
+   evidencia:"Acta de revisión por la dirección con acuerdos, acciones asignadas, responsables y fechas comprometidas.",
+   como:"Formato para Presentación de Revisión por la Dirección",area:"Dirección General"},
+  // CLÁUSULA 10 — MEJORA
+  {id:"10.0",c:10,sub:"10.0 Mejora continua — Manual SGSI",
+   req:"Mejorar continuamente la idoneidad, adecuación y eficacia del SGSI.",
+   evidencia:"Manual SGSI capítulo 10 con proceso de no conformidades, acciones correctivas y mejora continua.",
+   como:"Manual del SGSI. Capítulo 10",area:"Calidad / Certificaciones"},
+];
+
+const SOA_BASE = [
+  // ── GRUPO 5: ORGANIZACIONALES ─────────────────────────────────────
+  {id:"5.1",g:5,nombre:"Políticas de seguridad de la información",
+   req:"Definir, aprobar y comunicar políticas de SI revisadas periódicamente.",
+   evidencia:"Política de SI firmada por la dirección, fechada y publicada. Evidencia de comunicación al personal.",
+   area:"Dirección General"},
+  {id:"5.2",g:5,nombre:"Funciones y responsabilidades en materia de seguridad de la información",
+   req:"Definir y asignar roles y responsabilidades de seguridad de la información.",
+   evidencia:"Descriptivos de puesto con responsabilidades de SI, matriz RACI, cartas de asignación de roles.",
+   area:"Dirección General"},
+  {id:"5.3",g:5,nombre:"Segregación de funciones",
+   req:"Separar deberes conflictivos para reducir el riesgo de uso indebido de activos.",
+   evidencia:"Matriz de segregación de funciones, perfiles de usuario sin conflictos documentados.",
+   area:"TI"},
+  {id:"5.4",g:5,nombre:"Responsabilidades de gestión",
+   req:"La gerencia debe exigir a todo el personal que aplique la SI conforme a las políticas.",
+   evidencia:"Cláusulas de SI en contratos, evidencia de capacitación de inducción, comunicados de cumplimiento.",
+   area:"Recursos Humanos"},
+  {id:"5.5",g:5,nombre:"Contacto con las autoridades",
+   req:"Establecer y mantener contacto con autoridades pertinentes (incluye policía cibernética).",
+   evidencia:"Matriz de contactos con autoridades actualizada con nombre, cargo, teléfono y motivo de contacto.",
+   area:"Dirección General"},
+  {id:"5.6",g:5,nombre:"Contacto con grupos de especial interés",
+   req:"Mantener contacto con foros especializados en seguridad de la información.",
+   evidencia:"Suscripciones activas a foros de SI, boletines recibidos, registros de participación.",
+   area:"TI"},
+  {id:"5.7",g:5,nombre:"Inteligencia sobre amenazas",
+   req:"Recopilar y analizar información sobre amenazas de SI para generar inteligencia accionable.",
+   evidencia:"Informes de amenazas del SOC, lecciones aprendidas documentadas, acciones derivadas de foros.",
+   area:"TI"},
+  {id:"5.8",g:5,nombre:"Seguridad de la información en la gestión de proyectos",
+   req:"Integrar la SI en la gestión de proyectos, independientemente del tipo de proyecto.",
+   evidencia:"Plantilla de proyectos con sección de evaluación de riesgos de SI, actas de revisión de seguridad.",
+   area:"TI"},
+  {id:"5.9",g:5,nombre:"Inventario de información y otros activos asociados",
+   req:"Desarrollar y mantener un inventario de información y activos con propietarios identificados.",
+   evidencia:"Inventario de activos actualizado con clasificación, propietario, ubicación y nivel de criticidad.",
+   area:"TI"},
+  {id:"5.10",g:5,nombre:"Uso aceptable de la información y otros activos asociados",
+   req:"Identificar e implementar reglas para el uso aceptable de activos de información.",
+   evidencia:"Política de uso aceptable de activos firmada por el personal, acuses de recibo.",
+   area:"Recursos Humanos"},
+  {id:"5.11",g:5,nombre:"Devolución de activos",
+   req:"El personal debe devolver todos los activos de la organización al término del empleo.",
+   evidencia:"Proceso de baja con checklist de devolución de activos, constancias firmadas.",
+   area:"Recursos Humanos"},
+  {id:"5.12",g:5,nombre:"Clasificación de la información",
+   req:"Clasificar la información según requisitos de confidencialidad, integridad y disponibilidad.",
+   evidencia:"Esquema de clasificación documentado, ejemplos de información clasificada en cada nivel.",
+   area:"Calidad / Certificaciones"},
+  {id:"5.13",g:5,nombre:"Etiquetado de la información",
+   req:"Desarrollar e implementar procedimientos de etiquetado conforme al esquema de clasificación.",
+   evidencia:"Procedimiento de etiquetado, documentos con etiquetas de clasificación visibles.",
+   area:"Calidad / Certificaciones"},
+  {id:"5.14",g:5,nombre:"Transferencia de información",
+   req:"Establecer reglas y acuerdos para la transferencia de información dentro y fuera de la organización.",
+   evidencia:"Convenios de confidencialidad, cláusulas en contratos de servicio, registros de transferencias.",
+   area:"Dirección General"},
+  {id:"5.15",g:5,nombre:"Control de acceso",
+   req:"Establecer e implementar reglas de control de acceso físico y lógico basadas en requisitos de negocio.",
+   evidencia:"Política de control de acceso, matriz de accesos por rol, registros de accesos otorgados/revocados.",
+   area:"TI"},
+  {id:"5.16",g:5,nombre:"Gestión de la identidad",
+   req:"Gestionar todo el ciclo de vida de las identidades de usuarios.",
+   evidencia:"Procedimiento de altas, bajas y cambios de usuarios, registros de gestión de identidades.",
+   area:"TI"},
+  {id:"5.17",g:5,nombre:"Información de autenticación",
+   req:"Controlar la asignación y gestión de información de autenticación (contraseñas, tokens).",
+   evidencia:"Política de contraseñas implementada, evidencia de configuración técnica, registros de cumplimiento.",
+   area:"TI"},
+  {id:"5.18",g:5,nombre:"Derechos de acceso",
+   req:"Aprovisionar, revisar, modificar y eliminar derechos de acceso conforme a la política.",
+   evidencia:"Registros de revisiones periódicas de accesos, solicitudes de acceso aprobadas y documentadas.",
+   area:"TI"},
+  {id:"5.19",g:5,nombre:"Seguridad de la información en las relaciones con los proveedores",
+   req:"Definir e implementar procesos para gestionar riesgos de SI con proveedores.",
+   evidencia:"Contratos con cláusulas de SI, convenios de confidencialidad, evaluaciones de proveedores.",
+   area:"Dirección General"},
+  {id:"5.20",g:5,nombre:"Abordar la seguridad de la información en los acuerdos con proveedores",
+   req:"Establecer requisitos de SI en los acuerdos con cada proveedor según el tipo de relación.",
+   evidencia:"Contratos firmados con anexo de requisitos de SI, avisos de privacidad entregados.",
+   area:"Dirección General"},
+  {id:"5.21",g:5,nombre:"Gestión de la seguridad de la información en la cadena de suministro TIC",
+   req:"Gestionar riesgos de SI en la cadena de suministro de productos y servicios TIC.",
+   evidencia:"Matriz de riesgos de proveedores TIC, criterios de selección con requisitos de SI.",
+   area:"TI"},
+  {id:"5.22",g:5,nombre:"Seguimiento, revisión y gestión de cambios de servicios de proveedores",
+   req:"Monitorear, revisar y gestionar regularmente los cambios en las prácticas de SI de proveedores.",
+   evidencia:"Informes de evaluación periódica de proveedores, registros de cambios aprobados.",
+   area:"Dirección General"},
+  {id:"5.23",g:5,nombre:"Seguridad de la información para uso de servicios en la nube",
+   req:"Establecer procesos de adquisición, uso, gestión y salida de servicios en la nube.",
+   evidencia:"Política de administración de software/nube, inventario de servicios cloud con clasificación de riesgo.",
+   area:"TI"},
+  {id:"5.24",g:5,nombre:"Planificación y preparación de la gestión de incidentes de SI",
+   req:"Planificar y prepararse para gestionar incidentes de SI definiendo procesos y responsabilidades.",
+   evidencia:"Procedimiento de gestión de incidentes, roles definidos, canales de reporte establecidos.",
+   area:"TI"},
+  {id:"5.25",g:5,nombre:"Evaluación y decisión sobre eventos de seguridad de la información",
+   req:"Evaluar eventos de SI y decidir si se clasifican como incidentes.",
+   evidencia:"Criterios de clasificación de incidentes documentados, registros de eventos evaluados.",
+   area:"TI"},
+  {id:"5.26",g:5,nombre:"Respuesta a los incidentes de seguridad de la información",
+   req:"Responder a incidentes de SI conforme a procedimientos documentados.",
+   evidencia:"Registros de incidentes gestionados, evidencia de contención, erradicación y recuperación.",
+   area:"TI"},
+  {id:"5.27",g:5,nombre:"Aprender de los incidentes de seguridad de la información",
+   req:"Usar el conocimiento de incidentes para fortalecer los controles de seguridad.",
+   evidencia:"Base de conocimientos de incidentes, lecciones aprendidas documentadas, mejoras implementadas.",
+   area:"TI"},
+  {id:"5.28",g:5,nombre:"Recogida de pruebas",
+   req:"Establecer procedimientos para identificar, recolectar y preservar evidencia de eventos de SI.",
+   evidencia:"Procedimiento forense documentado, registros de cadena de custodia de evidencias.",
+   area:"TI"},
+  {id:"5.29",g:5,nombre:"Seguridad de la información durante la interrupción",
+   req:"Planificar cómo mantener la SI a nivel apropiado durante una interrupción.",
+   evidencia:"BIA, BCP y/o DRP con sección de SI, registros de pruebas de continuidad.",
+   area:"TI"},
+  {id:"5.30",g:5,nombre:"Preparación de las TIC para la continuidad de la actividad",
+   req:"Planificar, implementar, mantener y probar la preparación de TIC para la continuidad.",
+   evidencia:"Plan de continuidad de TIC, registros de pruebas y resultados, mejoras documentadas.",
+   area:"TI"},
+  {id:"5.31",g:5,nombre:"Requisitos legales, reglamentarios y contractuales",
+   req:"Identificar, documentar y mantener actualizados todos los requisitos legales y contractuales de SI.",
+   evidencia:"Matriz de requisitos legales actualizada (incluye regulaciones criptográficas), registros de cumplimiento.",
+   area:"Dirección General"},
+  {id:"5.32",g:5,nombre:"Derechos de propiedad intelectual",
+   req:"Implementar procedimientos para proteger los derechos de propiedad intelectual.",
+   evidencia:"Identificación de PI en la matriz legal, procedimientos de uso de software licenciado.",
+   area:"Dirección General"},
+  {id:"5.33",g:5,nombre:"Protección de los registros",
+   req:"Proteger registros contra pérdida, destrucción, falsificación y acceso no autorizado.",
+   evidencia:"Inventario de registros críticos, respaldos evidenciados, controles de acceso a registros.",
+   area:"Calidad / Certificaciones"},
+  {id:"5.34",g:5,nombre:"Privacidad y protección de la información personal",
+   req:"Asegurar la privacidad y protección de datos personales conforme a la legislación aplicable.",
+   evidencia:"Avisos de privacidad publicados, procedimiento de derechos ARCO, registros de solicitudes atendidas.",
+   area:"Dirección General"},
+  {id:"5.35",g:5,nombre:"Revisión independiente de la seguridad de la información",
+   req:"Revisar de forma independiente el enfoque de la organización para gestionar la SI.",
+   evidencia:"Programa de auditoría interna/externa, informes de auditoría, acciones correctivas documentadas.",
+   area:"Calidad / Certificaciones"},
+  {id:"5.36",g:5,nombre:"Cumplimiento de políticas, reglas y normas de seguridad de la información",
+   req:"Revisar periódicamente el cumplimiento de las políticas y normas de SI.",
+   evidencia:"Registros de revisiones de cumplimiento, hallazgos y acciones correctivas implementadas.",
+   area:"Calidad / Certificaciones"},
+  {id:"5.37",g:5,nombre:"Procedimientos operativos documentados",
+   req:"Documentar y poner a disposición los procedimientos operativos para instalaciones de procesamiento.",
+   evidencia:"Procedimientos operativos publicados, control de versiones, evidencia de uso por el personal.",
+   area:"TI"},
+  // ── GRUPO 6: PERSONAS ──────────────────────────────────────────────
+  {id:"6.1",g:6,nombre:"Investigación de antecedentes",
+   req:"Verificar antecedentes de candidatos antes de contratarlos conforme a la legislación aplicable.",
+   evidencia:"Procedimiento de verificación de antecedentes, registros de verificaciones realizadas.",
+   area:"Recursos Humanos"},
+  {id:"6.2",g:6,nombre:"Condiciones de empleo",
+   req:"Los contratos deben expresar responsabilidades de SI del personal y la organización.",
+   evidencia:"Contratos de trabajo con cláusulas de SI, acuses de recibo firmados por el personal.",
+   area:"Recursos Humanos"},
+  {id:"6.3",g:6,nombre:"Sensibilización, educación y formación en SI",
+   req:"Proporcionar concientización y capacitación apropiada en SI según el rol del personal.",
+   evidencia:"Plan de capacitación de SI, listas de asistencia, evaluaciones, certificados de formación.",
+   area:"Recursos Humanos"},
+  {id:"6.4",g:6,nombre:"Proceso Disciplinario",
+   req:"Formalizar y comunicar un proceso disciplinario para violaciones de políticas de SI.",
+   evidencia:"Procedimiento disciplinario publicado, evidencia de comunicación al personal.",
+   area:"Recursos Humanos"},
+  {id:"6.5",g:6,nombre:"Responsabilidades tras el cese o cambio de empleo",
+   req:"Definir y comunicar las responsabilidades de SI que continúan tras la terminación del empleo.",
+   evidencia:"Checklist de proceso de baja con revocación de accesos, convenios de confidencialidad post-empleo.",
+   area:"Recursos Humanos"},
+  {id:"6.6",g:6,nombre:"Acuerdos de confidencialidad o no divulgación",
+   req:"Identificar, documentar y hacer firmar acuerdos de confidencialidad relevantes.",
+   evidencia:"Acuerdos de confidencialidad firmados por todo el personal y partes interesadas relevantes.",
+   area:"Recursos Humanos"},
+  {id:"6.7",g:6,nombre:"Trabajo a distancia",
+   req:"Implementar medidas de SI para el personal que trabaja de forma remota.",
+   evidencia:"Política de trabajo remoto, configuraciones de VPN, registros de accesos remotos protegidos.",
+   area:"TI"},
+  {id:"6.8",g:6,nombre:"Informes de eventos de seguridad de la información",
+   req:"Proveer un mecanismo para que el personal reporte eventos de SI de forma oportuna.",
+   evidencia:"Canal de reporte documentado y comunicado, registros de eventos reportados por el personal.",
+   area:"TI"},
+  // ── GRUPO 7: FÍSICOS ───────────────────────────────────────────────
+  {id:"7.1",g:7,nombre:"Perímetro de seguridad física",
+   req:"Definir y usar perímetros de seguridad para proteger áreas con activos de información.",
+   evidencia:"Lay-out con perímetros definidos, controles físicos de acceso implementados y documentados.",
+   area:"Servicios Generales"},
+  {id:"7.2",g:7,nombre:"Entrada física",
+   req:"Proteger áreas seguras con controles de entrada apropiados y puntos de acceso.",
+   evidencia:"Política de control de acceso físico, registros de visitantes, evidencia de controles implementados.",
+   area:"Servicios Generales"},
+  {id:"7.3",g:7,nombre:"Asegurar las oficinas, salas e instalaciones",
+   req:"Diseñar e implementar seguridad física para oficinas, salas e instalaciones.",
+   evidencia:"Procedimiento de recepción, política de acceso a áreas restringidas, registros de incidentes físicos.",
+   area:"Servicios Generales"},
+  {id:"7.4",g:7,nombre:"Vigilancia de la seguridad física",
+   req:"Monitorear continuamente los locales para detectar acceso físico no autorizado.",
+   evidencia:"Sistema de CCTV operativo, registros de monitoreo, procedimiento de respuesta a alertas físicas.",
+   area:"Servicios Generales"},
+  {id:"7.5",g:7,nombre:"Protección contra amenazas físicas y medioambientales",
+   req:"Diseñar e implementar protección contra desastres y amenazas físicas intencionales.",
+   evidencia:"Plan de respuesta a emergencias, análisis de amenazas físicas, evidencia de simulacros.",
+   area:"Servicios Generales"},
+  {id:"7.6",g:7,nombre:"Trabajar en zonas seguras",
+   req:"Diseñar e implementar medidas de SI para trabajar en áreas seguras.",
+   evidencia:"Procedimiento de acceso a áreas seguras, registros de personal autorizado, bitácoras de acceso.",
+   area:"Servicios Generales"},
+  {id:"7.7",g:7,nombre:"Escritorio y pantalla despejados",
+   req:"Adoptar política de escritorio limpio y pantalla limpia para instalaciones de procesamiento.",
+   evidencia:"Política de escritorio limpio publicada, evidencia de bloqueo automático configurado, auditorías físicas.",
+   area:"TI"},
+  {id:"7.8",g:7,nombre:"Ubicación y protección de los equipos",
+   req:"Situar y proteger los equipos en lugares seguros para reducir riesgos ambientales.",
+   evidencia:"Lay-out con ubicación de equipos críticos, controles de acceso al área de servidores.",
+   area:"TI"},
+  {id:"7.9",g:7,nombre:"Seguridad de los activos fuera de las instalaciones",
+   req:"Proteger los activos que se encuentran fuera de las instalaciones.",
+   evidencia:"Política para uso de activos fuera de instalaciones, registros de préstamo/salida de equipos.",
+   area:"TI"},
+  {id:"7.10",g:7,nombre:"Medios de almacenamiento",
+   req:"Gestionar medios de almacenamiento a lo largo de su ciclo de vida conforme al esquema de clasificación.",
+   evidencia:"Inventario de medios de almacenamiento, procedimiento de manejo, registros de disposición segura.",
+   area:"TI"},
+  {id:"7.11",g:7,nombre:"Servicios públicos de apoyo",
+   req:"Proteger las instalaciones de procesamiento de cortes de energía y fallos de servicios de apoyo.",
+   evidencia:"Evidencia de UPS y planta de emergencia operativas, pruebas periódicas documentadas.",
+   area:"Servicios Generales"},
+  {id:"7.12",g:7,nombre:"Seguridad del cableado",
+   req:"Proteger los cables de energía, datos y servicios de información de interferencias o daños.",
+   evidencia:"Diagrama de cableado, evidencia de rutas protegidas, gestión de cableado estructurado.",
+   area:"TI"},
+  {id:"7.13",g:7,nombre:"Mantenimiento de los equipos",
+   req:"Mantener correctamente los equipos para asegurar disponibilidad, integridad y confidencialidad.",
+   evidencia:"Plan de mantenimiento preventivo, registros de mantenimientos realizados, bitácoras de equipos.",
+   area:"TI"},
+  {id:"7.14",g:7,nombre:"Eliminación segura o reutilización de los equipos",
+   req:"Verificar que equipos en desuso tengan datos sensibles eliminados de forma segura antes de su disposición.",
+   evidencia:"Procedimiento de borrado seguro, registros de destrucción/reciclaje, evidencia de trituración de papel.",
+   area:"TI"},
+  // ── GRUPO 8: TECNOLÓGICOS ──────────────────────────────────────────
+  {id:"8.1",g:8,nombre:"Dispositivos de punto final del usuario",
+   req:"Proteger la información almacenada, procesada o accesible a través de dispositivos del usuario.",
+   evidencia:"Política de gestión de endpoints, inventario de dispositivos, configuraciones de seguridad aplicadas.",
+   area:"TI"},
+  {id:"8.2",g:8,nombre:"Derechos de acceso privilegiados",
+   req:"Restringir y gestionar la asignación y uso de derechos de acceso privilegiados.",
+   evidencia:"Inventario de cuentas privilegiadas, registros de revisión periódica, justificaciones documentadas.",
+   area:"TI"},
+  {id:"8.3",g:8,nombre:"Restricción del acceso a la información",
+   req:"Restringir el acceso a información y activos conforme a la política de control de acceso.",
+   evidencia:"Perfiles de usuario configurados, registros de accesos, evidencia de revisiones de permisos.",
+   area:"TI"},
+  {id:"8.4",g:8,nombre:"Acceso al código fuente",
+   req:"Gestionar adecuadamente el acceso de lectura y escritura al código fuente y herramientas de desarrollo.",
+   evidencia:"Política de desarrollo con control de acceso a repositorios, registros de accesos al código fuente.",
+   area:"TI"},
+  {id:"8.5",g:8,nombre:"Autenticación segura",
+   req:"Aplicar tecnologías y procedimientos de autenticación segura basados en restricciones de acceso.",
+   evidencia:"Configuración de MFA/2FA, política de contraseñas implementada, bloqueo por intentos fallidos.",
+   area:"TI"},
+  {id:"8.6",g:8,nombre:"Gestión de la capacidad",
+   req:"Supervisar y ajustar la utilización de recursos conforme a necesidades de capacidad actuales y previstas.",
+   evidencia:"Reportes de monitoreo de capacidad, pronósticos de demanda, alertas configuradas.",
+   area:"TI"},
+  {id:"8.7",g:8,nombre:"Protección contra el malware",
+   req:"Implementar protección contra programas maliciosos apoyada en concientización de usuarios.",
+   evidencia:"Consola de antivirus con actualizaciones al día, reportes de detección, políticas de escaneo.",
+   area:"TI"},
+  {id:"8.8",g:8,nombre:"Gestión de las vulnerabilidades técnicas",
+   req:"Obtener información sobre vulnerabilidades técnicas y tomar medidas adecuadas.",
+   evidencia:"Reportes de PENTEST, plan de remediación, evidencias de parches y correcciones aplicadas.",
+   area:"TI"},
+  {id:"8.9",g:8,nombre:"Gestión de la configuración",
+   req:"Establecer, documentar y controlar las configuraciones de seguridad de hardware, software y redes.",
+   evidencia:"Plantillas de configuración base (hardening), registros de configuraciones aplicadas y revisadas.",
+   area:"TI"},
+  {id:"8.10",g:8,nombre:"Eliminación de información",
+   req:"Eliminar información de forma segura cuando ya no sea necesaria.",
+   evidencia:"Procedimiento de borrado seguro, registros de eliminación de datos con método utilizado.",
+   area:"TI"},
+  {id:"8.11",g:8,nombre:"Enmascaramiento de datos",
+   req:"Usar enmascaramiento de datos conforme a la política de control de acceso y legislación aplicable.",
+   evidencia:"Políticas de enmascaramiento implementadas, evidencia de datos enmascarados en entornos no productivos.",
+   area:"TI"},
+  {id:"8.12",g:8,nombre:"Prevención de la fuga de datos",
+   req:"Aplicar medidas de prevención de fuga de datos en sistemas que procesen información sensible.",
+   evidencia:"Herramienta DLP configurada, políticas de control de documentos, alertas y registros de incidentes.",
+   area:"TI"},
+  {id:"8.13",g:8,nombre:"Información de respaldo",
+   req:"Mantener y verificar periódicamente respaldos de información, software y sistemas.",
+   evidencia:"Política de respaldos, registros de ejecución, pruebas de restauración exitosas documentadas.",
+   area:"TI"},
+  {id:"8.14",g:8,nombre:"Redundancia de las instalaciones de tratamiento de la información",
+   req:"Implementar redundancia suficiente para cumplir los requisitos de disponibilidad.",
+   evidencia:"Diagrama de arquitectura con redundancias, BIA con RTOs/RPOs, pruebas de failover.",
+   area:"TI"},
+  {id:"8.15",g:8,nombre:"Registro (Logging)",
+   req:"Elaborar, almacenar, proteger y analizar registros de actividades, excepciones y eventos.",
+   evidencia:"Configuración de logs en sistemas críticos, correlacionador o SIEM activo, revisiones periódicas.",
+   area:"TI"},
+  {id:"8.16",g:8,nombre:"Actividades de seguimiento",
+   req:"Supervisar redes, sistemas y aplicaciones para detectar comportamientos anómalos.",
+   evidencia:"Sistema de monitoreo activo, alertas configuradas, registros de anomalías investigadas.",
+   area:"TI"},
+  {id:"8.17",g:8,nombre:"Sincronización de relojes",
+   req:"Sincronizar los relojes de sistemas de procesamiento con fuentes horarias aprobadas.",
+   evidencia:"Configuración NTP documentada, evidencia de sincronización en sistemas críticos.",
+   area:"TI"},
+  {id:"8.18",g:8,nombre:"Uso de programas de utilidad privilegiados",
+   req:"Restringir y controlar estrictamente el uso de utilidades que puedan anular controles del sistema.",
+   evidencia:"Lista de herramientas privilegiadas autorizadas, registros de uso, justificaciones documentadas.",
+   area:"TI"},
+  {id:"8.19",g:8,nombre:"Instalación de software en sistemas operativos",
+   req:"Implementar procedimientos para gestionar de forma segura la instalación de software.",
+   evidencia:"Política de instalación de software, lista de software autorizado, registros de instalaciones.",
+   area:"TI"},
+  {id:"8.20",g:8,nombre:"Seguridad de las redes",
+   req:"Proteger, gestionar y controlar redes y dispositivos de red para salvaguardar la información.",
+   evidencia:"Diagrama de red actualizado, configuraciones de seguridad perimetral, registros de firewall.",
+   area:"TI"},
+  {id:"8.21",g:8,nombre:"Seguridad de los servicios de red",
+   req:"Determinar, implementar y supervisar mecanismos de seguridad y SLAs de servicios de red.",
+   evidencia:"Contratos de servicios de red con SLAs de seguridad, registros de monitoreo de servicios.",
+   area:"TI"},
+  {id:"8.22",g:8,nombre:"Segregación de redes",
+   req:"Segregar grupos de servicios de información, usuarios y sistemas en las redes de la organización.",
+   evidencia:"Diagrama de segmentación de red (VLANs/zonas), configuraciones de switches y firewalls.",
+   area:"TI"},
+  {id:"8.23",g:8,nombre:"Filtro web",
+   req:"Gestionar el acceso a sitios web externos para reducir la exposición a contenido malicioso.",
+   evidencia:"Herramienta de filtrado web configurada, política de uso de internet, registros de bloqueos.",
+   area:"TI"},
+  {id:"8.24",g:8,nombre:"Uso de la criptografía",
+   req:"Definir normas para el uso eficaz de criptografía, incluida la gestión de claves.",
+   evidencia:"Política criptográfica, inventario de certificados/claves, procedimiento de gestión de claves.",
+   area:"TI"},
+  {id:"8.25",g:8,nombre:"Ciclo de vida de desarrollo seguro",
+   req:"Establecer y aplicar normas para el desarrollo seguro de software y sistemas.",
+   evidencia:"Política de desarrollo seguro (SDLC), revisiones de código, checklist de seguridad en releases.",
+   area:"TI"},
+  {id:"8.26",g:8,nombre:"Requisitos de seguridad de las aplicaciones",
+   req:"Identificar y especificar requisitos de SI al desarrollar o adquirir aplicaciones.",
+   evidencia:"Requisitos de seguridad documentados en proyectos, evidencia de revisión antes de adquisición.",
+   area:"TI"},
+  {id:"8.27",g:8,nombre:"Arquitectura de sistemas seguros y principios de ingeniería",
+   req:"Establecer y aplicar principios de ingeniería de sistemas seguros en todas las actividades de desarrollo.",
+   evidencia:"Estándares de arquitectura segura documentados, revisiones de arquitectura realizadas.",
+   area:"TI"},
+  {id:"8.28",g:8,nombre:"Codificación segura",
+   req:"Aplicar principios de codificación segura al desarrollo de software.",
+   evidencia:"Guía de codificación segura, revisiones de código estático (SAST), evidencia de correcciones.",
+   area:"TI"},
+  {id:"8.29",g:8,nombre:"Pruebas de seguridad en el desarrollo y la aceptación",
+   req:"Definir y aplicar procesos de pruebas de seguridad en el ciclo de vida del desarrollo.",
+   evidencia:"Plan de pruebas de seguridad, reportes de pruebas (DAST/SAST), criterios de aceptación cumplidos.",
+   area:"TI"},
+  {id:"8.30",g:8,nombre:"Desarrollo externalizado",
+   req:"Dirigir, controlar y revisar las actividades de desarrollo de sistemas subcontratados.",
+   evidencia:"Contratos con requisitos de seguridad para desarrollo externo, revisiones de código de terceros.",
+   area:"TI"},
+  {id:"8.31",g:8,nombre:"Separación de los entornos de desarrollo, prueba y producción",
+   req:"Separar y proteger los entornos de desarrollo, prueba y producción.",
+   evidencia:"Política de ambientes separados, evidencia técnica de separación, procedimientos de pase a producción.",
+   area:"TI"},
+  {id:"8.32",g:8,nombre:"Gestión del cambio",
+   req:"Someter los cambios en instalaciones y sistemas a procedimientos de gestión de cambios.",
+   evidencia:"Procedimiento de gestión de cambios, RFCs aprobados, registros de CAB, planes de rollback.",
+   area:"TI"},
+  {id:"8.33",g:8,nombre:"Información de la prueba",
+   req:"Seleccionar, proteger y gestionar adecuadamente la información utilizada en pruebas.",
+   evidencia:"Política de datos de prueba, uso de datos dummy, registros de anonimización de datos reales.",
+   area:"TI"},
+  {id:"8.34",g:8,nombre:"Protección de los sistemas durante las pruebas de auditoría",
+   req:"Planificar y acordar pruebas de auditoría que evalúen sistemas operativos para minimizar disrupciones.",
+   evidencia:"Plan de auditoría aprobado, registros de coordinación, evidencia de pruebas sin impacto en producción.",
+   area:"Calidad / Certificaciones"},
+];
+
+const SOA_GRUPOS = {5:"Controles Organizacionales",6:"Controles de Personas",7:"Controles Físicos",8:"Controles Tecnológicos"};
+const EST_SEG  = ["Por iniciar","En Proceso","Concluido"];
+const EST_SOA  = ["Por iniciar","En Proceso","Implementado"];
+const EST_BL   = ["Por iniciar","En Proceso","Terminado"];
+
+// ── ESTADO GLOBAL ────────────────────────────────────────────────────
+let empresaActual = 'B';
+let filterClausulas = {q:'',est:'',c:''};
+let filterSoA = {q:'',est:'',g:''};
+let filterComp = {q:'',tipo:'',gap:''};
+let filterBL = '';
+
+function key(tipo) { return `iso27001_${tipo}_emp${empresaActual}`; }
+
+function getState(tipo) {
+  try { return JSON.parse(localStorage.getItem(key(tipo))) || {}; } catch { return {}; }
+}
+function setState(tipo, data) {
+  localStorage.setItem(key(tipo), JSON.stringify(data));
+}
+function getBacklog() {
+  try { return JSON.parse(localStorage.getItem(key('backlog'))) || []; } catch { return []; }
+}
+function setBacklog(data) {
+  localStorage.setItem(key('backlog'), JSON.stringify(data));
+}
+function getNames() {
+  try { return JSON.parse(localStorage.getItem('iso27001_names')) || {B:'Empresa B',D:'Empresa D'}; } catch { return {B:'Empresa B',D:'Empresa D'}; }
+}
+function setNames(n) { localStorage.setItem('iso27001_names',JSON.stringify(n)); }
+
+// ── NAVEGACIÓN ───────────────────────────────────────────────────────
+function goPage(p) {
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.getElementById('nav-'+p).classList.add('active');
+  renderPage(p);
+}
+
+function setEmpresa(e) {
+  empresaActual = e;
+  document.getElementById('btn-emp-d').className = 'sb-empresa' + (e==='D'?' active-d':'');
+  document.getElementById('btn-emp-b').className = 'sb-empresa' + (e==='B'?' active-b':'');
+  const page = document.querySelector('.page.active').id.replace('page-','');
+  renderPage(page);
+}
+
+function renderPage(p) {
+  if(p==='dashboard') renderDashboard();
+  if(p==='clausulas') renderClausulas();
+  if(p==='soa') renderSoA();
+  if(p==='backlog') renderBacklog();
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────
+function avanceSeg(s) { if(s==='Concluido') return 1; if(s==='En Proceso') return 0.5; return 0; }
+function avanceSoA(s) { if(s==='Implementado') return 1; if(s==='En Proceso') return 0.5; return 0; }
+
+function pillClass(s) {
+  if(!s) return '';
+  const m = s.toLowerCase().replace(' ','-');
+  return `pill ${m}`;
+}
+
+function pct(n) { return Math.round(n*100)+'%'; }
+
+function toast(msg='✓ Guardado') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+function isOverdue(fecha, status) {
+  if(!fecha || status==='Concluido'||status==='Terminado'||status==='Implementado') return false;
+  return new Date(fecha) < new Date();
+}
+
+function empresaIndicator(containerId) {
+  const names = getNames();
+  const name = names[empresaActual];
+  const cls = empresaActual==='B'?'badge-b':'badge-d';
+  document.getElementById(containerId).innerHTML = `<div class="empresa-badge ${cls}">🏢 ${name}</div>`;
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────────────
+function calcStats(emp) {
+  const names = getNames();
+  const stCl = JSON.parse(localStorage.getItem(`iso27001_clausulas_emp${emp}`)||'{}');
+  const stSo = JSON.parse(localStorage.getItem(`iso27001_soa_emp${emp}`)||'{}');
+
+  let clConc=0,clProc=0,clInic=0;
+  CLAUSULAS_BASE.forEach(r=>{
+    const s = (stCl[r.id]||{}).estatus||'Por iniciar';
+    if(s==='Concluido') clConc++; else if(s==='En Proceso') clProc++; else clInic++;
+  });
+  const totalCl = CLAUSULAS_BASE.length;
+  const avCl = CLAUSULAS_BASE.reduce((a,r)=>a+avanceSeg((stCl[r.id]||{}).estatus||'Por iniciar'),0)/totalCl;
+
+  let soImpl=0,soProc=0,soInic=0;
+  SOA_BASE.forEach(r=>{
+    const s = (stSo[r.id]||{}).estatus||'Por iniciar';
+    if(s==='Implementado') soImpl++; else if(s==='En Proceso') soProc++; else soInic++;
+  });
+  const totalSo = SOA_BASE.length;
+  const avSo = SOA_BASE.reduce((a,r)=>a+avanceSoA((stSo[r.id]||{}).estatus||'Por iniciar'),0)/totalSo;
+
+  return {clConc,clProc,clInic,totalCl,avCl,soImpl,soProc,soInic,totalSo,avSo};
+}
+
+let dashSeg = 'ambas';
+function setDashSeg(v) {
+  dashSeg = v;
+  document.querySelectorAll('.dash-seg-btn').forEach(b=>b.classList.remove('active'));
+  const btnId = 'seg-'+(v==='ambas'?'ambas':v.toLowerCase());
+  if(document.getElementById(btnId)) document.getElementById(btnId).classList.add('active');
+  renderDashboard();
+}
+
+function donutSVG(pctVal, color, sublabel, size=160) {
+  const r = 54, cx = size/2, cy = size/2;
+  const circ = 2*Math.PI*r;
+  const dash = (pctVal/100)*circ;
+  return `<div style="position:relative;width:${size}px;height:${size}px;margin:0 auto;">
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="transform:rotate(-90deg);display:block">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e6ecef" stroke-width="14"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="14"
+        stroke-dasharray="${dash.toFixed(1)} ${(circ-dash).toFixed(1)}"
+        stroke-linecap="round"/>
+    </svg>
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;line-height:1.2;">
+      <div style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:22px;color:${color}">${pctVal}%</div>
+      <div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-top:2px">${sublabel}</div>
+    </div>
+  </div>`;
+}
+
+function renderDashboard() {
+  const names = getNames();
+  const empList = dashSeg==='ambas' ? ['B','D'] : [dashSeg];
+
+  // ── Donuts ────────────────────────────────────────────────────
+  const donutsHtml = empList.map(emp=>{
+    const s = calcStats(emp);
+    const color = emp==='B'?'#003049':'#2F8091';
+    const name = names[emp];
+    const clPct = Math.round(s.avCl*100);
+    const soPct = Math.round(s.avSo*100);
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);padding:24px;">
+      <div style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:14px;color:${color};margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+        <span style="width:10px;height:10px;background:${color};border-radius:50%;display:inline-block;flex-shrink:0"></span>${name}
+      </div>
+      <div style="display:flex;gap:24px;justify-content:center;flex-wrap:wrap;">
+        <div style="text-align:center;">
+          ${donutSVG(clPct, color, 'Cláusulas')}
+          <div style="font-size:11px;font-weight:700;color:var(--text3);margin-top:8px;text-transform:uppercase;letter-spacing:.6px;">Cláusulas ISO</div>
+        </div>
+        <div style="text-align:center;">
+          ${donutSVG(soPct, color, 'SoA')}
+          <div style="font-size:11px;font-weight:700;color:var(--text3);margin-top:8px;text-transform:uppercase;letter-spacing:.6px;">Controles SoA</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+        <div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--green);font-family:'Montserrat',sans-serif">${s.clConc}</div><div style="font-size:10px;color:var(--text3);font-weight:600">Concluidos</div></div>
+        <div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--amber);font-family:'Montserrat',sans-serif">${s.clProc}</div><div style="font-size:10px;color:var(--text3);font-weight:600">En Proceso</div></div>
+        <div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--red);font-family:'Montserrat',sans-serif">${s.clInic}</div><div style="font-size:10px;color:var(--text3);font-weight:600">Por Iniciar</div></div>
+      </div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+        <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--green);font-family:'Montserrat',sans-serif">${s.soImpl}</div><div style="font-size:10px;color:var(--text3);font-weight:600">SoA Impl.</div></div>
+        <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--amber);font-family:'Montserrat',sans-serif">${s.soProc}</div><div style="font-size:10px;color:var(--text3);font-weight:600">SoA Proceso</div></div>
+        <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--red);font-family:'Montserrat',sans-serif">${s.soInic}</div><div style="font-size:10px;color:var(--text3);font-weight:600">SoA Inic.</div></div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('donuts-container').innerHTML = donutsHtml;
+  if(document.getElementById('kpis-container')) document.getElementById('kpis-container').innerHTML = '';
+
+  // ── Chart por cláusula ────────────────────────────────────────
+  const stB = JSON.parse(localStorage.getItem('iso27001_clausulas_empB')||'{}');
+  const stD = JSON.parse(localStorage.getItem('iso27001_clausulas_empD')||'{}');
+  const chartHtml = Object.entries(CLAUSULAS_DESC).map(([num,desc])=>{
+    const rows = CLAUSULAS_BASE.filter(r=>r.c==num);
+    const avBv = rows.length ? rows.reduce((a,r)=>a+avanceSeg((stB[r.id]||{}).estatus||'Por iniciar'),0)/rows.length : 0;
+    const avDv = rows.length ? rows.reduce((a,r)=>a+avanceSeg((stD[r.id]||{}).estatus||'Por iniciar'),0)/rows.length : 0;
+    const showB = dashSeg==='ambas'||dashSeg==='B';
+    const showD = dashSeg==='ambas'||dashSeg==='D';
+    return `<div class="chart-bar-group">
+      <div class="chart-bar-label">
+        <span><b>${num}</b> — ${desc}</span>
+        <span style="display:flex;gap:14px">
+          ${showB?`<span style="color:var(--navy);font-weight:700">${pct(avBv)}</span>`:''}
+          ${showD?`<span style="color:var(--teal);font-weight:700">${pct(avDv)}</span>`:''}
+        </span>
+      </div>
+      ${showB?`<div class="chart-bar-track" style="height:10px;margin-bottom:${showD?'4':'8'}px;"><div class="chart-bar-fill-a" style="width:${pct(avBv)}"></div></div>`:''}
+      ${showD?`<div class="chart-bar-track" style="height:10px;margin-bottom:8px;"><div class="chart-bar-fill-b" style="width:${pct(avDv)}"></div></div>`:''}
+    </div>`;
+  }).join('');
+  const legend = `<div style="display:flex;gap:20px;margin-bottom:20px;font-size:12px;font-weight:600;">
+    ${dashSeg!=='D'?`<span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:4px;background:var(--navy);border-radius:2px;display:inline-block"></span>${names.B}</span>`:''}
+    ${dashSeg!=='B'?`<span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:4px;background:var(--teal);border-radius:2px;display:inline-block"></span>${names.D}</span>`:''}
+  </div>`;
+  document.getElementById('chart-clausulas').innerHTML = legend + chartHtml;
+}
+
+
+// ── CLÁUSULAS ────────────────────────────────────────────────────────
+function renderClausulas() {
+  empresaIndicator('empresa-indicator-clausulas');
+  const _names = getNames();
+  const _aprobTh = document.querySelector('#tabla-clausulas thead tr th:nth-child(9)');
+  if(_aprobTh) _aprobTh.textContent = `Aprobado por ${_names[empresaActual]}`;
+  const st = getState('clausulas');
+  let html = '';
+  let lastC = null;
+
+  const f = filterClausulas;
+  const filtered = CLAUSULAS_BASE.filter(r=>{
+    if(f.q && !r.sub.toLowerCase().includes(f.q.toLowerCase()) && !r.como.toLowerCase().includes(f.q.toLowerCase()) && !(r.req||'').toLowerCase().includes(f.q.toLowerCase()) && !(r.evidencia||'').toLowerCase().includes(f.q.toLowerCase()) && !r.area.toLowerCase().includes(f.q.toLowerCase())) return false;
+    const s = (st[r.id]||{}).estatus||'Por iniciar';
+    if(f.est && s!==f.est) return false;
+    if(f.c && r.c!=f.c) return false;
+    return true;
+  });
+
+  filtered.forEach(r=>{
+    if(r.c !== lastC) {
+      html += `<tr class="clause-row"><td colspan="10">Cláusula ${r.c} — ${CLAUSULAS_DESC[r.c]||''}</td></tr>`;
+      lastC = r.c;
+    }
+    const d = st[r.id]||{};
+    const estatus = d.estatus||'Por iniciar';
+    const responsable = d.responsable||'';
+    const comentarios = d.comentarios||'';
+    html += `<tr>
+      <td><code style="font-family:'Montserrat',monospace;font-size:11px;color:var(--text3)">${r.id}</code></td>
+      <td style="max-width:200px;font-size:11px;color:var(--navy);line-height:1.5;font-style:italic">${r.req||'—'}</td>
+      <td style="max-width:200px"><div style="font-weight:600;font-size:12px">${r.sub}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${r.como}</div></td>
+      <td style="max-width:190px;font-size:11px;color:var(--text2);line-height:1.5">${r.evidencia||'—'}</td>
+      <td><input class="inline-input" value="${d.area||r.area}" placeholder="Área…" style="width:120px;font-weight:700;font-size:11px;color:var(--navy)" onchange="updateCl('${r.id}','area',this.value)"></td>
+      <td><input class="inline-input" value="${responsable}" placeholder="Responsable" style="width:120px" onchange="updateCl('${r.id}','responsable',this.value)"></td>
+      <td>
+        <select class="${pillClass(estatus)}" style="background:transparent;border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:'Montserrat',sans-serif" onchange="updateCl('${r.id}','estatus',this.value)">
+          ${EST_SEG.map(o=>`<option ${o===estatus?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </td>
+      <td><input class="inline-input" value="${d.entregado||''}" placeholder="Nombre…" style="width:130px" onchange="updateCl('${r.id}','entregado',this.value)"></td>
+      <td><input class="inline-input" value="${d.aprobado||''}" placeholder="Nombre…" style="width:130px" onchange="updateCl('${r.id}','aprobado',this.value)"></td>
+      <td><input class="inline-input" value="${comentarios}" placeholder="Notas…" style="width:140px" onchange="updateCl('${r.id}','comentarios',this.value)"></td>
+    </tr>`;
+  });
+
+  document.getElementById('tbody-clausulas').innerHTML = html || '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:32px">Sin resultados</td></tr>';
+}
+
+function updateCl(id, field, val) {
+  const st = getState('clausulas');
+  if(!st[id]) st[id]={};
+  st[id][field] = val;
+  setState('clausulas', st);
+  if(field==='estatus') {
+    renderClausulas();
+    toast();
+  }
+}
+
+function filtrarClausulas(q) { filterClausulas.q=q; renderClausulas(); }
+function filtrarClausulaEstatus(v) { filterClausulas.est=v; renderClausulas(); }
+function filtrarClausulaNum(v) { filterClausulas.c=v; renderClausulas(); }
+
+// ── SOA ──────────────────────────────────────────────────────────────
+function renderSoA() {
+  empresaIndicator('empresa-indicator-soa');
+  const _names = getNames();
+  const _aprobThS = document.querySelector('#tabla-soa thead tr th:nth-child(9)');
+  if(_aprobThS) _aprobThS.textContent = `Aprobado por ${_names[empresaActual]}`;
+  const st = getState('soa');
+  let html = '';
+  let lastG = null;
+  const f = filterSoA;
+
+  const filtered = SOA_BASE.filter(r=>{
+    if(f.q && !r.nombre.toLowerCase().includes(f.q.toLowerCase()) && !r.id.includes(f.q) && !(r.req||'').toLowerCase().includes(f.q.toLowerCase()) && !(r.area||'').toLowerCase().includes(f.q.toLowerCase())) return false;
+    const s = (st[r.id]||{}).estatus||'Por iniciar';
+    if(f.est && s!==f.est) return false;
+    if(f.g && r.g!=f.g) return false;
+    return true;
+  });
+
+  filtered.forEach(r=>{
+    if(r.g !== lastG) {
+      html += `<tr class="clause-row"><td colspan="10">${SOA_GRUPOS[r.g]||'Grupo '+r.g}</td></tr>`;
+      lastG = r.g;
+    }
+    const d = st[r.id]||{};
+    const estatus = d.estatus||'Por iniciar';
+    html += `<tr>
+      <td><code style="font-family:'Montserrat',monospace;font-size:12px;color:var(--navy);font-weight:700">${r.id}</code></td>
+      <td style="max-width:190px;font-size:11px;color:var(--navy);line-height:1.5;font-style:italic">${r.req||'—'}</td>
+      <td style="font-size:12px;font-weight:600;max-width:200px">${r.nombre}</td>
+      <td style="max-width:180px;font-size:11px;color:var(--text2);line-height:1.5">${r.evidencia||'—'}</td>
+      <td><input class="inline-input" value="${d.area||r.area||'TI'}" placeholder="Área…" style="width:120px;font-weight:700;font-size:11px;color:var(--navy)" onchange="updateSoA('${r.id}','area',this.value)"></td>
+      <td><input class="inline-input" value="${d.responsable||''}" placeholder="Responsable" style="width:120px" onchange="updateSoA('${r.id}','responsable',this.value)"></td>
+      <td>
+        <select class="${pillClass(estatus)}" style="background:transparent;border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:'Montserrat',sans-serif" onchange="updateSoA('${r.id}','estatus',this.value)">
+          ${EST_SOA.map(o=>`<option ${o===estatus?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </td>
+      <td><input class="inline-input" value="${d.entregado||''}" placeholder="Nombre…" style="width:130px" onchange="updateSoA('${r.id}','entregado',this.value)"></td>
+      <td><input class="inline-input" value="${d.aprobado||''}" placeholder="Nombre…" style="width:130px" onchange="updateSoA('${r.id}','aprobado',this.value)"></td>
+      <td><input class="inline-input" value="${d.comentarios||''}" placeholder="Comentarios…" style="width:130px" onchange="updateSoA('${r.id}','comentarios',this.value)"></td>
+    </tr>`;
+  });
+
+  document.getElementById('tbody-soa').innerHTML = html || '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:32px">Sin resultados</td></tr>';
+}
+
+function updateSoA(id, field, val) {
+  const st = getState('soa');
+  if(!st[id]) st[id]={};
+  st[id][field] = val;
+  setState('soa', st);
+  if(field==='estatus') { renderSoA(); toast(); }
+}
+
+function filtrarSoA(q) { filterSoA.q=q; renderSoA(); }
+function filtrarSoAEstatus(v) { filterSoA.est=v; renderSoA(); }
+function filtrarSoAGrupo(v) { filterSoA.g=v; renderSoA(); }
+
+// ── BACKLOG ──────────────────────────────────────────────────────────
+function renderBacklog() {
+  empresaIndicator('empresa-indicator-backlog');
+  const items = getBacklog();
+  const f = filterBL;
+  const filtered = f ? items.filter(i=>i.status===f) : items;
+
+  if(!filtered.length) {
+    document.getElementById('backlog-list').innerHTML = `<div style="text-align:center;color:var(--text3);padding:48px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2)">No hay tareas. Crea la primera →</div>`;
+    return;
+  }
+
+  const html = filtered.map((item,idx)=>{
+    const realIdx = items.indexOf(item);
+    const done = item.status==='Terminado';
+    const over = isOverdue(item.fecha, item.status);
+    return `<div class="backlog-item">
+      <div class="backlog-top">
+        <div class="backlog-check ${done?'done':''}" onclick="toggleBacklog(${realIdx})">
+          ${done?'<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>':''}
+        </div>
+        <div class="backlog-body">
+          <div class="backlog-title" style="${done?'text-decoration:line-through;color:var(--text3)':''}">${item.desc}</div>
+          <div class="backlog-meta">
+            ${item.resp?`<span>👤 ${item.resp}</span>`:''}
+            ${item.fecha?`<span class="${over?'overdue':''}">📅 ${item.fecha}${over?' ⚠️ Vencida':''}</span>`:''}
+            <span><span class="${pillClass(item.status)}">${item.status}</span></span>
+          </div>
+          ${item.obs?`<div style="font-size:11px;color:var(--text2);margin-top:8px">${item.obs}</div>`:''}
+        </div>
+        <div class="backlog-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editarBacklog(${realIdx})">Editar</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="eliminarBacklog(${realIdx})">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('backlog-list').innerHTML = html;
+}
+
+function filtrarBacklog(v) { filterBL=v; renderBacklog(); }
+
+let editingBL = null;
+function abrirModalBacklog(idx) {
+  editingBL = idx !== undefined ? idx : null;
+  const items = getBacklog();
+  const item = editingBL !== null ? items[editingBL] : {};
+  document.getElementById('bl-desc').value = item.desc||'';
+  document.getElementById('bl-resp').value = item.resp||'';
+  document.getElementById('bl-fecha').value = item.fecha||'';
+  document.getElementById('bl-status').value = item.status||'Por iniciar';
+  document.getElementById('bl-obs').value = item.obs||'';
+  document.getElementById('modal-backlog').classList.add('open');
+}
+
+function editarBacklog(idx) { abrirModalBacklog(idx); }
+
+function cerrarModal() {
+  document.getElementById('modal-backlog').classList.remove('open');
+  editingBL = null;
+}
+
+function guardarBacklogItem() {
+  const desc = document.getElementById('bl-desc').value.trim();
+  if(!desc) { alert('La descripción es requerida'); return; }
+  const item = {
+    desc, resp: document.getElementById('bl-resp').value,
+    fecha: document.getElementById('bl-fecha').value,
+    status: document.getElementById('bl-status').value,
+    obs: document.getElementById('bl-obs').value,
+    created: new Date().toISOString()
+  };
+  const items = getBacklog();
+  if(editingBL !== null) items[editingBL] = item;
+  else items.unshift(item);
+  setBacklog(items);
+  cerrarModal();
+  renderBacklog();
+  toast('✓ Tarea guardada');
+}
+
+function toggleBacklog(idx) {
+  const items = getBacklog();
+  items[idx].status = items[idx].status==='Terminado' ? 'Por iniciar' : 'Terminado';
+  setBacklog(items);
+  renderBacklog();
+}
+
+function eliminarBacklog(idx) {
+  if(!confirm('¿Eliminar esta tarea?')) return;
+  const items = getBacklog();
+  items.splice(idx,1);
+  setBacklog(items);
+  renderBacklog();
+}
+
+// ── EXPORT ───────────────────────────────────────────────────────────
+function exportarCSV() {
+  const names = getNames();
+  const stCl = getState('clausulas');
+  const stSo = getState('soa');
+  let csv = 'Tipo,ID,Descripcion,Estatus,Responsable,Fecha Compromiso,Comentarios\n';
+  CLAUSULAS_BASE.forEach(r=>{
+    const d=stCl[r.id]||{};
+    csv += `"Clausula","${r.id}","${r.sub}","${d.estatus||'Por iniciar'}","${d.responsable||''}","${d.fecha||''}","${(d.comentarios||'').replace(/"/g,"'")}"\n`;
+  });
+  SOA_BASE.forEach(r=>{
+    const d=stSo[r.id]||{};
+    csv += `"SoA","${r.id}","${r.nombre}","${d.estatus||'Por iniciar'}","${d.responsable||''}","","${(d.comentarios||'').replace(/"/g,"'")}"\n`;
+  });
+  const blob = new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`ISO27001_${names[empresaActual]}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('✓ CSV exportado');
+}
+
+function exportarJSON() {
+  const names = getNames();
+  const data = {
+    empresa: names[empresaActual],
+    exportado: new Date().toISOString(),
+    clausulas: getState('clausulas'),
+    soa: getState('soa'),
+    backlog: getBacklog()
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`ISO27001_${names[empresaActual]}_${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('✓ JSON exportado');
+}
+
+// ── NOMBRES EDITABLES ─────────────────────────────────────────────────
+function initNames() {
+  const names = getNames();
+  document.getElementById('sb-label-b').textContent = names.B;
+  document.getElementById('sb-label-d').textContent = names.D;
+}
+
+function setSbEmpresa(e) {
+  empresaActual = e;
+  // update sidebar button states
+  document.getElementById('sb-btn-b').className = 'sb-emp-btn' + (e==='B' ? ' active-b' : '');
+  document.getElementById('sb-btn-d').className = 'sb-emp-btn' + (e==='D' ? ' active-d' : '');
+  // re-render current page
+  const page = document.querySelector('.page.active').id.replace('page-','');
+  renderPage(page);
+}
+
+
+// ── IMPORTAR ─────────────────────────────────────────────────────────
+function importarArchivo(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  if(ext === 'json') {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if(data.clausulas) setState('clausulas', data.clausulas);
+        if(data.soa)       setState('soa', data.soa);
+        if(data.backlog)   setBacklog(data.backlog);
+        toast('✓ JSON importado correctamente');
+        const page = document.querySelector('.page.active').id.replace('page-','');
+        renderPage(page);
+      } catch(err) { alert('Error al leer el JSON: ' + err.message); }
+    };
+    reader.readAsText(file);
+  } else if(ext === 'csv') {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const lines = e.target.result.split('\n').slice(1).filter(l=>l.trim());
+        const stCl = getState('clausulas');
+        const stSo = getState('soa');
+        let cl=0, so=0;
+        lines.forEach(line => {
+          // Parse CSV safely
+          const cols = [];
+          let cur='', inQ=false;
+          for(let ch of line){
+            if(ch==='"'){ inQ=!inQ; }
+            else if(ch===','&&!inQ){ cols.push(cur.trim()); cur=''; }
+            else cur+=ch;
+          }
+          cols.push(cur.trim());
+          const [tipo, id, , estatus, responsable, fecha, comentarios] = cols.map(c=>c.replace(/^"|"$/g,''));
+          if(!id || !estatus) return;
+          if(tipo==='Clausula'){
+            if(!stCl[id]) stCl[id]={};
+            if(estatus) stCl[id].estatus = estatus;
+            if(responsable) stCl[id].responsable = responsable;
+            if(fecha) stCl[id].fecha = fecha;
+            if(comentarios) stCl[id].comentarios = comentarios;
+            cl++;
+          } else if(tipo==='SoA'){
+            if(!stSo[id]) stSo[id]={};
+            if(estatus) stSo[id].estatus = estatus;
+            if(responsable) stSo[id].responsable = responsable;
+            if(comentarios) stSo[id].comentarios = comentarios;
+            so++;
+          }
+        });
+        setState('clausulas', stCl);
+        setState('soa', stSo);
+        toast(`✓ CSV importado: ${cl} cláusulas, ${so} controles SoA`);
+        const page = document.querySelector('.page.active').id.replace('page-','');
+        renderPage(page);
+      } catch(err) { alert('Error al leer el CSV: ' + err.message); }
+    };
+    reader.readAsText(file, 'UTF-8');
+  } else if(ext === 'xlsx') {
+    // Read XLSX using SheetJS (loaded from CDN)
+    if(typeof XLSX === 'undefined') {
+      // Load SheetJS dynamically
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      script.onload = () => leerXLSX(file);
+      script.onerror = () => alert('No se pudo cargar la librería para leer Excel. Verifica tu conexión o exporta el archivo como CSV.');
+      document.head.appendChild(script);
+    } else {
+      leerXLSX(file);
+    }
+  } else {
+    alert('Formato no soportado. Usa .xlsx, .csv o .json');
+  }
+  input.value = ''; // reset input
+}
+
+function leerXLSX(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const stCl = getState('clausulas');
+      const stSo = getState('soa');
+      let cl=0, so=0, bl=0;
+
+      // Hoja Seguimiento → clausulas
+      const sheetSeg = wb.SheetNames.find(n => n.toLowerCase().includes('seguimiento'));
+      if(sheetSeg) {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetSeg], {defval:''});
+        rows.forEach(row => {
+          // Match by Subcláusula text against our base data
+          const subText = (row['Subcláusula '] || row['Subcláusula'] || row['SubclÃ¡usula'] || '').toString().trim();
+          const match = CLAUSULAS_BASE.find(c => c.sub.toLowerCase() === subText.toLowerCase()
+                                              || c.id === subText);
+          if(match) {
+            if(!stCl[match.id]) stCl[match.id]={};
+            const est = (row['Compartido a revisión'] || row['Estatus'] || row['Avance '] || '').toString().trim();
+            if(est && EST_SEG.includes(est)) { stCl[match.id].estatus = est; cl++; }
+            const resp = (row['Responsable Funcional '] || row['Responsable Funcional'] || '').toString().trim();
+            if(resp) stCl[match.id].responsable = resp;
+            const com = (row['Comentarios'] || '').toString().trim();
+            if(com && com !== '-') stCl[match.id].comentarios = com;
+          }
+        });
+      }
+
+      // Hoja SoA → soa
+      const sheetSoA = wb.SheetNames.find(n => n.toLowerCase().includes('soa') && !n.toLowerCase().includes('resumen'));
+      if(sheetSoA) {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetSoA], {defval:''});
+        rows.forEach(row => {
+          const sub = (row['Subcontrol'] || '').toString().trim();
+          const match = SOA_BASE.find(c => c.id === sub);
+          if(match) {
+            if(!stSo[match.id]) stSo[match.id]={};
+            const est = (row['Estatus '] || row['Estatus'] || '').toString().trim();
+            if(est && EST_SOA.includes(est)) { stSo[match.id].estatus = est; so++; }
+            const com = (row['¿Cómo cumplimos?'] || '').toString().trim();
+            if(com) stSo[match.id].comentarios = com;
+          }
+        });
+      }
+
+      // Hoja Backlog
+      const sheetBL = wb.SheetNames.find(n => n.toLowerCase().includes('backlog'));
+      if(sheetBL) {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetBL], {defval:''});
+        const items = getBacklog();
+        rows.forEach(row => {
+          const desc = (row['Pendiente'] || '').toString().trim();
+          const est  = (row['Estatus']   || '').toString().trim();
+          if(desc) {
+            items.push({ desc, resp: (row['Responsable']||'').toString().trim(),
+                         fecha: '', status: est||'Por iniciar', obs:'',
+                         created: new Date().toISOString() });
+            bl++;
+          }
+        });
+        setBacklog(items);
+      }
+
+      setState('clausulas', stCl);
+      setState('soa', stSo);
+      toast(`✓ Excel importado: ${cl} cláusulas, ${so} controles SoA, ${bl} tareas de backlog`);
+      const page = document.querySelector('.page.active').id.replace('page-','');
+      renderPage(page);
+    } catch(err) {
+      console.error(err);
+      alert('Error al procesar el Excel: ' + err.message + '\nIntenta exportarlo como CSV desde el menú Exportar.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', ()=>{
+  initNames();
+  renderDashboard();
+
+  // Close modal on overlay click
+  document.getElementById('modal-backlog').addEventListener('click', function(e){
+    if(e.target===this) cerrarModal();
+  });
+});
+</script>
+</body>
+</html>
