@@ -1861,7 +1861,16 @@ function replicarEmpresa() {
   });
   localStorage.setItem(`iso27001_soa_emp${destino}`, JSON.stringify(stSoDestino));
 
-  toast(`✓ Replicado a ${names[destino]}`);
+  // ── Backlog ──────────────────────────────────────────────
+  const blOrigen  = JSON.parse(localStorage.getItem(`iso27001_backlog_emp${origen}`) || '[]');
+  if (blOrigen.length > 0) {
+    const blDestino      = JSON.parse(localStorage.getItem(`iso27001_backlog_emp${destino}`) || '[]');
+    const descExistentes = new Set(blDestino.map(i => i.desc));
+    const nuevos         = blOrigen.filter(i => !descExistentes.has(i.desc));
+    localStorage.setItem(`iso27001_backlog_emp${destino}`, JSON.stringify([...blDestino, ...nuevos]));
+  }
+
+  toast(`✓ Replicado a ${names[destino]} (cláusulas, SoA y backlog)`);
 }
 
 // Mantener el label del botón actualizado según empresa activa
@@ -1957,7 +1966,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 </script>
 <!-- Datos embebidos — se reemplaza al exportar HTML -->
-<script id="iso-data" type="application/json">{"iso27001_soa_empD":{},"iso27001_clausulas_empD":{"4.1":{"estatus":"En Proceso"},"4.2":{"estatus":"En Proceso"},"4.3":{"estatus":"En Proceso"},"4.4":{"estatus":"En Proceso"},"5.1":{"estatus":"En Proceso"},"5.2":{"estatus":"En Proceso"},"5.3c":{"estatus":"En Proceso"},"6.1":{"estatus":"En Proceso"},"7.1a":{"estatus":"En Proceso"},"7.5.1":{"estatus":"En Proceso"},"8.0":{"estatus":"En Proceso"},"9.0":{"estatus":"En Proceso"},"9.2.1":{"estatus":"En Proceso"},"9.3.1":{"estatus":"En Proceso"},"10.0":{"estatus":"En Proceso"}},"iso27001_clausulas_empB":{"4.1":{"estatus":"En Proceso"},"4.2":{"estatus":"En Proceso"},"4.3":{"estatus":"En Proceso"},"4.4":{"estatus":"En Proceso"},"5.1":{"estatus":"En Proceso"},"5.2":{"estatus":"En Proceso"},"5.3c":{"estatus":"En Proceso"},"6.1":{"estatus":"En Proceso"},"7.1a":{"estatus":"En Proceso"},"7.5.1":{"estatus":"En Proceso"},"8.0":{"estatus":"En Proceso"},"9.0":{"estatus":"En Proceso"},"9.2.1":{"estatus":"En Proceso"},"9.3.1":{"estatus":"En Proceso"},"10.0":{"estatus":"En Proceso"}}}</script>
+<script id="iso-data" type="application/json">{"iso27001_backlog_empB":[{"desc":"Generar documento de política independiente a lo redactado en el manual","resp":"Procesia","fecha":"2026-03-11","status":"Terminado","obs":"Se comparte documento independiente para su revisión","created":"2026-03-24T07:39:12.261Z"},{"desc":"Omitir del manual del sistema, aquellas referencias en alcance a la república, o servicios nacionales","resp":"Procesia","fecha":"2026-03-17","status":"Terminado","obs":"Se actualiza el manual","created":"2026-03-24T07:38:16.144Z"}],"iso27001_soa_empD":{},"iso27001_clausulas_empD":{"4.1":{"estatus":"En Proceso"},"4.2":{"estatus":"En Proceso"},"4.3":{"estatus":"En Proceso"},"4.4":{"estatus":"En Proceso"},"5.1":{"estatus":"En Proceso"},"5.2":{"estatus":"En Proceso"},"5.3c":{"estatus":"En Proceso"},"6.1":{"estatus":"En Proceso"},"7.1a":{"estatus":"En Proceso"},"7.5.1":{"estatus":"En Proceso"},"8.0":{"estatus":"En Proceso"},"9.0":{"estatus":"En Proceso"},"9.2.1":{"estatus":"En Proceso"},"9.3.1":{"estatus":"En Proceso"},"10.0":{"estatus":"En Proceso"}},"iso27001_backlog_empD":[{"desc":"Generar documento de política independiente a lo redactado en el manual","resp":"Procesia","fecha":"2026-03-11","status":"Terminado","obs":"Se comparte documento independiente para su revisión","created":"2026-03-24T07:39:12.261Z"},{"desc":"Omitir del manual del sistema, aquellas referencias en alcance a la república, o servicios nacionales","resp":"Procesia","fecha":"2026-03-17","status":"Terminado","obs":"Se actualiza el manual","created":"2026-03-24T07:38:16.144Z"}],"iso27001_clausulas_empB":{"4.1":{"estatus":"En Proceso"},"4.2":{"estatus":"En Proceso"},"4.3":{"estatus":"En Proceso"},"4.4":{"estatus":"En Proceso"},"5.1":{"estatus":"En Proceso"},"5.2":{"estatus":"En Proceso"},"5.3c":{"estatus":"En Proceso"},"6.1":{"estatus":"En Proceso"},"7.1a":{"estatus":"En Proceso"},"7.5.1":{"estatus":"En Proceso"},"8.0":{"estatus":"En Proceso"},"9.0":{"estatus":"En Proceso"},"9.2.1":{"estatus":"En Proceso"},"9.3.1":{"estatus":"En Proceso"},"10.0":{"estatus":"En Proceso"}}}</script>
 
 <!-- Copia del HTML fuente para exportarHTML() -->
 <script id="__html_source__" type="text/plain"></script>
