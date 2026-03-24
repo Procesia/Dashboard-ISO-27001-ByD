@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
+<html lang="es"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ISO 27001:2022 — Sistema de Seguimiento</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
 <style>
 :root {
   /* Paleta base */
@@ -402,8 +400,26 @@ tr:hover td { background: rgba(0,48,73,0.02); }
     </button>
   </div>
 
-  <div class="sb-section" style="margin-top:8px;">Exportar</div>
+  <div class="sb-section" style="margin-top:4px;">Sincronizar</div>
+  <div style="padding:4px 12px 8px;">
+    <button onclick="replicarEmpresa()" style="
+      width:100%;padding:10px 12px;border-radius:var(--radius);
+      background:var(--navy);color:#fff;border:none;cursor:pointer;
+      font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;
+      display:flex;align-items:center;gap:8px;justify-content:center;
+      transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+      <span>⇄</span> Replicar a empresa <span id="replica-target">D</span>
+    </button>
+    <div style="font-size:10px;color:var(--text3);margin-top:6px;text-align:center;line-height:1.4">
+      Copia el avance de la empresa activa a la otra. No sobreescribe responsables ni comentarios.
+    </div>
+  </div>
+
+  <div class="sb-section" style="margin-top:8px;">Archivo</div>
   <div class="sb-nav">
+    <button class="sb-item" onclick="exportarHTML()" style="color:var(--navy);font-weight:700"><span class="icon">💾</span> Exportar HTML</button>
+    <div id="file-status" style="padding:2px 12px 6px;font-size:10px;color:var(--green);font-weight:700;display:none"></div>
+    <div style="height:1px;background:var(--border);margin:4px 12px 6px"></div>
     <button class="sb-item" onclick="document.getElementById('file-import').click()"><span class="icon">↑</span> Importar Excel</button>
     <input type="file" id="file-import" accept=".xlsx,.csv,.json" style="display:none" onchange="importarArchivo(this)">
     <button class="sb-item" onclick="exportarCSV()"><span class="icon">↓</span> CSV</button>
@@ -411,7 +427,7 @@ tr:hover td { background: rgba(0,48,73,0.02); }
     <button class="sb-item" onclick="window.print()"><span class="icon">⎙</span> PDF / Imprimir</button>
   </div>
 
-  <div class="sb-footer">Datos guardados localmente.<br>Sin servidor. Sin login.</div>
+  <div class="sb-footer" id="sb-footer-text">Datos en localStorage.<br>Exporta HTML para compartir.</div>
 </aside>
 
 <!-- MAIN -->
@@ -1639,6 +1655,7 @@ function setSbEmpresa(e) {
   // re-render current page
   const page = document.querySelector('.page.active').id.replace('page-','');
   renderPage(page);
+  actualizarBotonReplica();
 }
 
 
@@ -1801,16 +1818,155 @@ function leerXLSX(file) {
   reader.readAsArrayBuffer(file);
 }
 
+
+
+// ── REPLICAR EMPRESA ─────────────────────────────────────────────
+function replicarEmpresa() {
+  const origen  = empresaActual;
+  const destino = origen === 'B' ? 'D' : 'B';
+  const names   = getNames();
+
+  const camposReplicar = ['estatus', 'area', 'entregado'];
+  // Nota: responsable, aprobado y comentarios NO se replican (son propios de cada empresa)
+
+  const confirm_msg = 
+    `¿Replicar avance de ${names[origen]} → ${names[destino]}?\n\n` +
+    `Se copiarán: Estatus, Área Funcional y Entregado por Procesia.\n` +
+    `NO se tocarán: Responsable, Aprobado por empresa ni Comentarios.\n\n` +
+    `¿Continuar?`;
+
+  if (!confirm(confirm_msg)) return;
+
+  // ── Cláusulas ──────────────────────────────────────────────────
+  const stClOrigen  = JSON.parse(localStorage.getItem(`iso27001_clausulas_emp${origen}`) || '{}');
+  const stClDestino = JSON.parse(localStorage.getItem(`iso27001_clausulas_emp${destino}`) || '{}');
+
+  Object.entries(stClOrigen).forEach(([id, data]) => {
+    if (!stClDestino[id]) stClDestino[id] = {};
+    camposReplicar.forEach(campo => {
+      if (data[campo] !== undefined) stClDestino[id][campo] = data[campo];
+    });
+  });
+  localStorage.setItem(`iso27001_clausulas_emp${destino}`, JSON.stringify(stClDestino));
+
+  // ── SoA ────────────────────────────────────────────────────────
+  const stSoOrigen  = JSON.parse(localStorage.getItem(`iso27001_soa_emp${origen}`) || '{}');
+  const stSoDestino = JSON.parse(localStorage.getItem(`iso27001_soa_emp${destino}`) || '{}');
+
+  Object.entries(stSoOrigen).forEach(([id, data]) => {
+    if (!stSoDestino[id]) stSoDestino[id] = {};
+    camposReplicar.forEach(campo => {
+      if (data[campo] !== undefined) stSoDestino[id][campo] = data[campo];
+    });
+  });
+  localStorage.setItem(`iso27001_soa_emp${destino}`, JSON.stringify(stSoDestino));
+
+  toast(`✓ Replicado a ${names[destino]}`);
+}
+
+// Mantener el label del botón actualizado según empresa activa
+function actualizarBotonReplica() {
+  const el = document.getElementById('replica-target');
+  if (el) el.textContent = empresaActual === 'B' ? 'D' : 'B';
+}
+
+// ── EXPORTAR HTML CON DATOS EMBEBIDOS ────────────────────────────
+// Recopila todo el localStorage de la app
+function recopilarEstado() {
+  const state = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('iso27001_')) {
+      try { state[k] = JSON.parse(localStorage.getItem(k)); }
+      catch { state[k] = localStorage.getItem(k); }
+    }
+  }
+  return state;
+}
+
+// Al cargar la página, si hay datos embebidos los restaura al localStorage
+function cargarDatosEmbebidos() {
+  // El bloque de datos vive en un <script id="iso-data"> en el propio HTML
+  const el = document.getElementById('iso-data');
+  if (!el) return;
+  try {
+    const state = JSON.parse(el.textContent);
+    // Solo carga si localStorage está vacío para no pisar datos más recientes
+    const yaHayDatos = Object.keys(localStorage).some(k => k.startsWith('iso27001_'));
+    if (!yaHayDatos && Object.keys(state).length > 0) {
+      Object.entries(state).forEach(([k, v]) => {
+        localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+      });
+    }
+  } catch(e) { console.warn('iso-data parse error:', e); }
+}
+
+function exportarHTML() {
+  // 1. Obtener el HTML fuente original de la página
+  const srcEl = document.getElementById('__html_source__');
+  if (!srcEl) {
+    alert('No se encontró el fuente HTML. Recarga la página e intenta de nuevo.');
+    return;
+  }
+  let src = srcEl.textContent;
+
+  // 2. Serializar el estado actual
+  const state = recopilarEstado();
+  const stateJSON = JSON.stringify(state);
+
+  // 3. Reemplazar el contenido del bloque iso-data
+  src = src.replace(
+    /(<script id="iso-data" type="application\/json">)[\s\S]*?(<\/script>)/,
+    '$1' + stateJSON + '$2'
+  );
+
+  // 4. Descargar
+  const blob = new Blob([src], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'index.html';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✓ HTML descargado con datos — reemplaza el anterior');
+  setFileStatus('✓ Descargado ' + new Date().toLocaleTimeString());
+}
+
+function setFileStatus(msg) {
+  const el = document.getElementById('file-status');
+  if (el) { el.textContent = msg; el.style.display = ''; }
+}
+
+// Ctrl+S / Cmd+S → exportar HTML
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    exportarHTML();
+  }
+});
+
 // ── INIT ─────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', ()=>{
+  cargarDatosEmbebidos();
   initNames();
   renderDashboard();
-
-  // Close modal on overlay click
   document.getElementById('modal-backlog').addEventListener('click', function(e){
     if(e.target===this) cerrarModal();
   });
 });
+
 </script>
-</body>
-</html>
+<!-- Datos embebidos — se reemplaza al exportar HTML -->
+<script id="iso-data" type="application/json">{"iso27001_soa_empB":{"5.1":{"estatus":"En Proceso"},"5.2":{"estatus":"En Proceso"},"5.3":{"estatus":"En Proceso"},"8.34":{"estatus":"En Proceso"},"8.33":{"estatus":"En Proceso"},"8.32":{"estatus":"En Proceso"},"8.31":{"estatus":"En Proceso"},"8.30":{"estatus":"En Proceso"},"8.29":{"estatus":"En Proceso"},"8.28":{"estatus":"En Proceso"},"8.27":{"estatus":"En Proceso"},"8.26":{"estatus":"En Proceso"},"8.25":{"estatus":"En Proceso"},"8.24":{"estatus":"En Proceso"},"8.23":{"estatus":"En Proceso"},"8.22":{"estatus":"En Proceso"},"8.21":{"estatus":"En Proceso"},"8.20":{"estatus":"En Proceso"},"8.19":{"estatus":"En Proceso"},"8.18":{"estatus":"En Proceso"},"8.17":{"estatus":"En Proceso"},"8.16":{"estatus":"En Proceso"},"8.15":{"estatus":"En Proceso"},"8.14":{"estatus":"En Proceso"},"8.13":{"estatus":"En Proceso"},"8.12":{"estatus":"En Proceso"},"8.11":{"estatus":"En Proceso"},"8.10":{"estatus":"En Proceso"},"8.9":{"estatus":"En Proceso"},"8.8":{"estatus":"En Proceso"},"8.7":{"estatus":"En Proceso"},"8.6":{"estatus":"En Proceso"},"8.5":{"estatus":"En Proceso"},"8.4":{"estatus":"En Proceso"},"8.3":{"estatus":"En Proceso"},"8.2":{"estatus":"En Proceso"},"8.1":{"estatus":"En Proceso"}},"iso27001_soa_empD":{"5.1":{"estatus":"En Proceso"},"5.2":{"estatus":"En Proceso"},"5.3":{"estatus":"En Proceso"},"8.34":{"estatus":"En Proceso"},"8.33":{"estatus":"En Proceso"},"8.32":{"estatus":"En Proceso"},"8.31":{"estatus":"En Proceso"},"8.30":{"estatus":"En Proceso"},"8.29":{"estatus":"En Proceso"},"8.28":{"estatus":"En Proceso"},"8.27":{"estatus":"En Proceso"},"8.26":{"estatus":"En Proceso"},"8.25":{"estatus":"En Proceso"},"8.24":{"estatus":"En Proceso"},"8.23":{"estatus":"En Proceso"},"8.22":{"estatus":"En Proceso"},"8.21":{"estatus":"En Proceso"},"8.20":{"estatus":"En Proceso"},"8.19":{"estatus":"En Proceso"},"8.18":{"estatus":"En Proceso"},"8.17":{"estatus":"En Proceso"},"8.16":{"estatus":"En Proceso"},"8.15":{"estatus":"En Proceso"},"8.14":{"estatus":"En Proceso"},"8.13":{"estatus":"En Proceso"},"8.12":{"estatus":"En Proceso"},"8.11":{"estatus":"En Proceso"},"8.10":{"estatus":"En Proceso"},"8.9":{"estatus":"En Proceso"},"8.8":{"estatus":"En Proceso"},"8.7":{"estatus":"En Proceso"},"8.6":{"estatus":"En Proceso"},"8.5":{"estatus":"En Proceso"},"8.4":{"estatus":"En Proceso"},"8.3":{"estatus":"En Proceso"},"8.2":{"estatus":"En Proceso"},"8.1":{"estatus":"En Proceso"}},"iso27001_clausulas_empD":{"4.1":{"estatus":"En Proceso"},"4.2":{"estatus":"En Proceso"},"4.3":{"estatus":"En Proceso"},"4.4":{"estatus":"En Proceso"}},"iso27001_clausulas_empB":{"4.1":{"responsable":"Procesos","estatus":"En Proceso"},"4.2":{"estatus":"En Proceso"},"4.3":{"estatus":"En Proceso"},"4.4":{"estatus":"En Proceso"}},"iso27001_clausulas_empA":{"4.2":{"estatus":"En Proceso"}}}</script>
+
+<!-- Copia del HTML fuente para exportarHTML() -->
+<script id="__html_source__" type="text/plain"></script>
+<script>
+// Populate __html_source__ with the page's own source right after load
+(function(){
+  var src = document.documentElement.outerHTML;
+  // Strip the html_source script content itself to avoid recursion
+  src = src.replace(/(<script id="__html_source__" type="text\/plain">)[\s\S]*?(<\/script>)/, '$1$2');
+  document.getElementById('__html_source__').textContent = src;
+})();
+</script></body></html>
