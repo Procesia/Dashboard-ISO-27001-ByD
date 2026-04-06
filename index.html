@@ -470,6 +470,7 @@ tr:hover td { background: rgba(0,48,73,0.02); }
     <div style="height:1px;background:var(--border);margin:4px 12px 6px"></div>
     <button class="sb-item" onclick="document.getElementById('file-import').click()"><span class="icon">↑</span> Importar Excel</button>
     <input type="file" id="file-import" accept=".xlsx,.csv,.json" style="display:none" onchange="importarArchivo(this)">
+    <button class="sb-item" onclick="exportarExcel()" style="color:var(--green);font-weight:600"><span class="icon">📊</span> Exportar Excel</button>
     <button class="sb-item" onclick="exportarCSV()"><span class="icon">↓</span> CSV</button>
     <button class="sb-item" onclick="exportarJSON()"><span class="icon">{ }</span> JSON</button>
     <button class="sb-item" onclick="window.print()"><span class="icon">⎙</span> PDF / Imprimir</button>
@@ -1761,6 +1762,85 @@ function exportarJSON() {
   toast('✓ JSON exportado');
 }
 
+function exportarExcel() {
+  function doExport() {
+    const names = getNames();
+    const emp = empresaActual;
+    const stCl = getState('clausulas');
+    const stSo = getState('soa');
+    const backlog = getBacklog();
+
+    // Sheet 1: Dashboard summary
+    var dashData = [
+      ['ISO 27001 — Resumen Dashboard'],
+      ['Empresa', names[emp]],
+      ['Fecha exportación', new Date().toLocaleDateString('es-MX')],
+      [],
+      ['Sección','Total','Concluido','En Proceso','Por iniciar','% Avance']
+    ];
+    var clConc=0,clProc=0,clInic=0;
+    CLAUSULAS_BASE.forEach(function(r){var s=(stCl[r.id]||{}).estatus||'Por iniciar';if(s==='Concluido')clConc++;else if(s==='En Proceso')clProc++;else clInic++});
+    var soConc=0,soProc=0,soInic=0;
+    SOA_BASE.forEach(function(r){var s=(stSo[r.id]||{}).estatus||'Por iniciar';if(s==='Implementado')soConc++;else if(s==='En Proceso')soProc++;else soInic++});
+    var totalCl=CLAUSULAS_BASE.length, totalSo=SOA_BASE.length;
+    dashData.push(['Cláusulas (SL)',totalCl,clConc,clProc,clInic,Math.round(clConc/totalCl*100)+'%']);
+    dashData.push(['SoA Anexo A',totalSo,soConc,soProc,soInic,Math.round(soConc/totalSo*100)+'%']);
+    dashData.push(['Total',totalCl+totalSo,clConc+soConc,clProc+soProc,clInic+soInic,Math.round((clConc+soConc)/(totalCl+totalSo)*100)+'%']);
+
+    // Sheet 2: Clausulas
+    var clData = [['Cláusula','Requisito','Entregable Procesia','Estatus','Entregado','Aprobado','Área','Link','Qué evidenciar']];
+    CLAUSULAS_BASE.forEach(function(r){
+      var d=stCl[r.id]||{};
+      clData.push([r.id,r.req||'',r.sub+' — '+r.como,d.estatus||'Por iniciar',d.entregado||'',d.aprobado||'',d.area||r.area,d.link||'',(r.evidencia||'').replace(/\n/g,'; ')]);
+    });
+
+    // Sheet 3: SoA
+    var soaData = [['Control','Requisito','Nombre','Entregable Procesia','Estatus','Entregado','Aprobado','Área','Link','Qué evidenciar']];
+    SOA_BASE.forEach(function(r){
+      var d=stSo[r.id]||{};
+      soaData.push([r.id,r.req||'',r.nombre,r.entregable||'',d.estatus||'Por iniciar',d.entregado||'',d.aprobado||'',d.area||r.area||'',d.link||'',(r.evidencia||'').replace(/\n/g,'; ')]);
+    });
+
+    // Sheet 4: Backlog
+    var blData = [['Actividad','Responsable','Prioridad','Fecha límite','Estatus','Comentarios']];
+    backlog.forEach(function(b){
+      blData.push([b.actividad||'',b.responsable||'',b.prioridad||'',b.fecha||'',b.estatus||'',b.comentarios||'']);
+    });
+
+    // Create workbook
+    var wb = XLSX.utils.book_new();
+    var ws1 = XLSX.utils.aoa_to_sheet(dashData);
+    var ws2 = XLSX.utils.aoa_to_sheet(clData);
+    var ws3 = XLSX.utils.aoa_to_sheet(soaData);
+    var ws4 = XLSX.utils.aoa_to_sheet(blData);
+
+    // Set column widths
+    ws1['!cols']=[{wch:20},{wch:10},{wch:12},{wch:12},{wch:12},{wch:12}];
+    ws2['!cols']=[{wch:10},{wch:40},{wch:40},{wch:14},{wch:18},{wch:18},{wch:20},{wch:30},{wch:50}];
+    ws3['!cols']=[{wch:8},{wch:40},{wch:30},{wch:30},{wch:14},{wch:18},{wch:18},{wch:20},{wch:30},{wch:50}];
+    ws4['!cols']=[{wch:40},{wch:20},{wch:12},{wch:14},{wch:14},{wch:40}];
+
+    XLSX.utils.book_append_sheet(wb, ws1, 'Dashboard');
+    XLSX.utils.book_append_sheet(wb, ws2, 'Cláusulas SL');
+    XLSX.utils.book_append_sheet(wb, ws3, 'SoA Anexo A');
+    XLSX.utils.book_append_sheet(wb, ws4, 'Backlog');
+
+    XLSX.writeFile(wb, 'ISO27001_'+names[emp]+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    toast('✓ Excel exportado con 4 hojas');
+  }
+
+  if(typeof XLSX === 'undefined') {
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    script.onload = doExport;
+    script.onerror = function(){alert('No se pudo cargar SheetJS. Verifica tu conexión.')};
+    document.head.appendChild(script);
+  } else {
+    doExport();
+  }
+}
+
+
 // ── NOMBRES EDITABLES ─────────────────────────────────────────────────
 function initNames() {
   const names = getNames();
@@ -2093,7 +2173,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 </script>
 <!-- Datos embebidos — se reemplaza al exportar HTML -->
-<script id="iso-data" type="application/json">{"iso27001_soa_empB":{"5.1":{"estatus":"En Proceso","entregado":"Completado"},"5.2":{"estatus":"En Proceso"}},"iso27001_backlog_empB":[{"desc":"Subir documentos de referencia","resp":"Cliente","fecha":"2026-03-27","status":"Por iniciar","obs":"","created":"2026-03-26T05:31:07.503Z"},{"desc":"Asegurar que los documentos de B, se apeguen a las plantillas.","resp":"PROCESIA","fecha":"2026-03-31","status":"Terminado","obs":"","created":"2026-03-26T05:30:05.595Z"},{"desc":"Actualizar documento de métricas con la información que comparta Karlita","resp":"PROCESIA","fecha":"2026-03-31","status":"Por iniciar","obs":"dependemos de que nos compartan el archivo correspondiente.","created":"2026-03-26T05:29:00.172Z"},{"desc":"Generar documento independiente de objetivos y solo referenciar en el manual","resp":"PROCESIA","fecha":"2026-03-27","status":"Por iniciar","obs":"","created":"2026-03-26T05:27:54.557Z"},{"desc":"Generar documento independiente para el análisis de contexto organizacional y solo referenciar ese documento en el Manual del SGI","resp":"PROCESIA","fecha":"2026-03-27","status":"Por iniciar","obs":"","created":"2026-03-26T05:27:00.700Z"},{"desc":"Profundizar en la redacción respecto a la enmienda del cambio climático","resp":"PROCESIA","fecha":"2026-03-27","status":"Terminado","obs":"Para D, se puede considerar el proyecto de sostenibilidad. ","created":"2026-03-26T05:26:14.852Z"},{"desc":"Corregir el alcance en el manual para que coincida exactamente con el descrito en certificado","resp":"PROCESIA","fecha":"2026-03-27","status":"Terminado","obs":"","created":"2026-03-26T05:24:00.332Z"},{"desc":"Generar documento de política independiente a lo redactado en el manual","resp":"Procesia","fecha":"2026-03-11","status":"Terminado","obs":"Se comparte documento independiente para su revisión","created":"2026-03-24T07:39:12.261Z"},{"desc":"Omitir del manual del sistema, aquellas referencias en alcance a la república, o servicios nacionales","resp":"Procesia","fecha":"2026-03-17","status":"Terminado","obs":"Se actualiza el manual","created":"2026-03-24T07:38:16.144Z"}],"iso27001_soa_empD":{"5.1":{"evidenciaOk":false,"entregado":"Completado","aprobado":"Completado","estatus":"En Proceso"},"5.2":{"evidenciaOk":false,"estatus":"En Proceso"}},"iso27001_backlog_empD":[{"desc":"Generar documento de política independiente a lo redactado en el manual","resp":"Procesia","fecha":"2026-03-11","status":"Terminado","obs":"Se comparte documento independiente para su revisión","created":"2026-03-24T07:39:12.261Z"},{"desc":"Omitir del manual del sistema, aquellas referencias en alcance a la república, o servicios nacionales","resp":"Procesia","fecha":"2026-03-17","status":"Terminado","obs":"Se actualiza el manual","created":"2026-03-24T07:38:16.144Z"},{"desc":"Asegurar que los documentos de B, se apeguen a las plantillas.","resp":"PROCESIA","fecha":"2026-03-31","status":"Terminado","obs":"","created":"2026-03-26T05:30:05.595Z"},{"desc":"Actualizar documento de métricas con la información que comparta Karlita","resp":"PROCESIA","fecha":"2026-03-31","status":"Por iniciar","obs":"dependemos de que nos compartan el archivo correspondiente.","created":"2026-03-26T05:29:00.172Z"},{"desc":"Generar documento independiente de objetivos y solo referenciar en el manual","resp":"PROCESIA","fecha":"2026-03-27","status":"Por iniciar","obs":"","created":"2026-03-26T05:27:54.557Z"},{"desc":"Generar documento independiente para el análisis de contexto organizacional y solo referenciar ese documento en el Manual del SGI","resp":"PROCESIA","fecha":"2026-03-27","status":"Por iniciar","obs":"","created":"2026-03-26T05:27:00.700Z"},{"desc":"Profundizar en la redacción respecto a la enmienda del cambio climático","resp":"PROCESIA","fecha":"2026-03-27","status":"Terminado","obs":"Para D, se puede considerar el proyecto de sostenibilidad. ","created":"2026-03-26T05:26:14.852Z"},{"desc":"Corregir el alcance en el manual para que coincida exactamente con el descrito en certificado","resp":"PROCESIA","fecha":"2026-03-27","status":"Terminado","obs":"","created":"2026-03-26T05:24:00.332Z"},{"desc":"Subir documentos de referencia","resp":"Cliente","fecha":"2026-03-27","status":"Por iniciar","obs":"","created":"2026-03-26T05:31:07.503Z"}],"iso27001_clausulas_empD":{"4.1":{"estatus":"En Proceso"},"4.2":{"estatus":"En Proceso"},"4.3":{"estatus":"En Proceso"},"4.4":{"estatus":"En Proceso"},"5.1":{"estatus":"En Proceso"},"5.2":{"estatus":"En Proceso"},"5.3c":{"estatus":"En Proceso"},"6.1":{"estatus":"En Proceso"},"7.1a":{"estatus":"En Proceso"},"7.5.1":{"estatus":"En Proceso"},"8.0":{"estatus":"En Proceso"},"9.0":{"estatus":"En Proceso"},"9.2.1":{"estatus":"En Proceso"},"9.3.1":{"estatus":"En Proceso"},"10.0":{"estatus":"En Proceso"},"5.3a":{"estatus":"En Proceso"},"5.3b":{"area":"CISO / Seguridad / RRHH"},"9.1":{"estatus":"En Proceso"}},"iso27001_clausulas_empB":{"4.1":{"estatus":"En Proceso","evidenciaOk":false,"evChecks":{"0":false,"1":false}},"4.2":{"estatus":"En Proceso","evidenciaOk":false},"4.3":{"estatus":"En Proceso","evidenciaOk":false},"4.4":{"estatus":"En Proceso","evidenciaOk":false},"5.1":{"estatus":"En Proceso"},"5.2":{"estatus":"En Proceso"},"5.3c":{"estatus":"En Proceso"},"6.1":{"estatus":"En Proceso"},"7.1a":{"estatus":"En Proceso"},"7.5.1":{"estatus":"En Proceso"},"8.0":{"estatus":"En Proceso"},"9.0":{"estatus":"En Proceso","evidenciaOk":false},"9.2.1":{"estatus":"En Proceso"},"9.3.1":{"estatus":"En Proceso"},"10.0":{"estatus":"En Proceso"},"5.3a":{"estatus":"En Proceso"},"5.3b":{"area":"CISO / Seguridad / RRHH","evidenciaOk":false},"9.1":{"evidenciaOk":false,"estatus":"En Proceso"}}}</script>
+<script id="iso-data" type="application/json">{"iso27001_soa_empB":{"5.1":{"estatus":"Implementado"},"5.2":{"estatus":"Implementado"}},"iso27001_backlog_empB":[{"desc":"Generar documento de política independiente a lo redactado en el manual","resp":"Procesia","fecha":"2026-03-11","status":"Terminado","obs":"Se comparte documento independiente para su revisión","created":"2026-03-24T07:39:12.261Z"},{"desc":"Omitir del manual del sistema, aquellas referencias en alcance a la república, o servicios nacionales","resp":"Procesia","fecha":"2026-03-17","status":"Terminado","obs":"Se actualiza el manual","created":"2026-03-24T07:38:16.144Z"}],"iso27001_soa_empD":{"5.1":{"evidenciaOk":false,"entregado":"Completado","aprobado":"Completado","estatus":"Implementado"},"5.2":{"evidenciaOk":false,"estatus":"Implementado"}},"iso27001_backlog_empD":[{"desc":"Ajustar el alcance del Sistema","resp":"","fecha":"","status":"Por iniciar","obs":"","created":"2026-03-25T22:49:31.097Z"},{"desc":"Generar documento de política independiente a lo redactado en el manual","resp":"Procesia","fecha":"2026-03-11","status":"Terminado","obs":"Se comparte documento independiente para su revisión","created":"2026-03-24T07:39:12.261Z"},{"desc":"Omitir del manual del sistema, aquellas referencias en alcance a la república, o servicios nacionales","resp":"Procesia","fecha":"2026-03-17","status":"Terminado","obs":"Se actualiza el manual","created":"2026-03-24T07:38:16.144Z"}],"iso27001_clausulas_empD":{"4.1":{"estatus":"En Proceso"},"4.2":{"estatus":"En Proceso"},"4.3":{"estatus":"En Proceso"},"4.4":{"estatus":"En Proceso"},"5.1":{"estatus":"En Proceso"},"5.2":{"estatus":"En Proceso"},"5.3c":{"estatus":"En Proceso"},"6.1":{"estatus":"En Proceso"},"7.1a":{"estatus":"En Proceso"},"7.5.1":{"estatus":"En Proceso"},"8.0":{"estatus":"En Proceso"},"9.0":{"estatus":"En Proceso"},"9.2.1":{"estatus":"En Proceso"},"9.3.1":{"estatus":"En Proceso"},"10.0":{"estatus":"En Proceso"},"5.3a":{"estatus":"En Proceso"},"5.3b":{"area":"CISO / Seguridad / RRHH"},"9.1":{"estatus":"Concluido"}},"iso27001_clausulas_empB":{"4.1":{"estatus":"En Proceso","evidenciaOk":false,"evChecks":{"0":false,"1":false}},"4.2":{"estatus":"En Proceso","evidenciaOk":false},"4.3":{"estatus":"En Proceso","evidenciaOk":false},"4.4":{"estatus":"En Proceso","evidenciaOk":false},"5.1":{"estatus":"En Proceso"},"5.2":{"estatus":"En Proceso"},"5.3c":{"estatus":"En Proceso"},"6.1":{"estatus":"En Proceso"},"7.1a":{"estatus":"En Proceso"},"7.5.1":{"estatus":"En Proceso"},"8.0":{"estatus":"En Proceso"},"9.0":{"estatus":"En Proceso","evidenciaOk":false},"9.2.1":{"estatus":"En Proceso"},"9.3.1":{"estatus":"En Proceso"},"10.0":{"estatus":"En Proceso"},"5.3a":{"estatus":"En Proceso"},"5.3b":{"area":"CISO / Seguridad / RRHH","evidenciaOk":false},"9.1":{"evidenciaOk":false,"estatus":"Concluido"}}}</script>
 
 <!-- Copia del HTML fuente para exportarHTML() -->
 <script id="__html_source__" type="text/plain"></script>
