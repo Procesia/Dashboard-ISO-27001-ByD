@@ -1,0 +1,191 @@
+{
+  "clausulas_empB": {
+    "4.1": {
+      "estatus": "En Proceso",
+      "evidenciaOk": false,
+      "evChecks": {
+        "0": false,
+        "1": false
+      }
+    },
+    "4.2": {
+      "estatus": "En Proceso",
+      "evidenciaOk": false
+    },
+    "4.3": {
+      "estatus": "En Proceso",
+      "evidenciaOk": false
+    },
+    "4.4": {
+      "estatus": "En Proceso",
+      "evidenciaOk": false
+    },
+    "5.1": {
+      "estatus": "En Proceso"
+    },
+    "5.2": {
+      "estatus": "En Proceso"
+    },
+    "5.3c": {
+      "estatus": "En Proceso"
+    },
+    "6.1": {
+      "estatus": "En Proceso"
+    },
+    "7.1a": {
+      "estatus": "En Proceso"
+    },
+    "7.5.1": {
+      "estatus": "En Proceso"
+    },
+    "8.0": {
+      "estatus": "En Proceso"
+    },
+    "9.0": {
+      "estatus": "En Proceso",
+      "evidenciaOk": false
+    },
+    "9.2.1": {
+      "estatus": "En Proceso"
+    },
+    "9.3.1": {
+      "estatus": "En Proceso"
+    },
+    "10.0": {
+      "estatus": "En Proceso"
+    },
+    "5.3a": {
+      "estatus": "En Proceso"
+    },
+    "5.3b": {
+      "area": "CISO / Seguridad / RRHH",
+      "evidenciaOk": false
+    },
+    "9.1": {
+      "evidenciaOk": false,
+      "estatus": "Concluido"
+    }
+  },
+  "soa_empB": {
+    "5.1": {
+      "estatus": "Implementado"
+    },
+    "5.2": {
+      "estatus": "Implementado"
+    }
+  },
+  "backlog_empB": [
+    {
+      "desc": "Generar documento de política independiente a lo redactado en el manual",
+      "resp": "Procesia",
+      "fecha": "2026-03-11",
+      "status": "Terminado",
+      "obs": "Se comparte documento independiente para su revisión",
+      "created": "2026-03-24T07:39:12.261Z"
+    },
+    {
+      "desc": "Omitir del manual del sistema, aquellas referencias en alcance a la república, o servicios nacionales",
+      "resp": "Procesia",
+      "fecha": "2026-03-17",
+      "status": "Terminado",
+      "obs": "Se actualiza el manual",
+      "created": "2026-03-24T07:38:16.144Z"
+    }
+  ],
+  "clausulas_empD": {
+    "4.1": {
+      "estatus": "En Proceso"
+    },
+    "4.2": {
+      "estatus": "En Proceso"
+    },
+    "4.3": {
+      "estatus": "En Proceso"
+    },
+    "4.4": {
+      "estatus": "En Proceso"
+    },
+    "5.1": {
+      "estatus": "En Proceso"
+    },
+    "5.2": {
+      "estatus": "En Proceso"
+    },
+    "5.3c": {
+      "estatus": "En Proceso"
+    },
+    "6.1": {
+      "estatus": "En Proceso"
+    },
+    "7.1a": {
+      "estatus": "En Proceso"
+    },
+    "7.5.1": {
+      "estatus": "En Proceso"
+    },
+    "8.0": {
+      "estatus": "En Proceso"
+    },
+    "9.0": {
+      "estatus": "En Proceso"
+    },
+    "9.2.1": {
+      "estatus": "En Proceso"
+    },
+    "9.3.1": {
+      "estatus": "En Proceso"
+    },
+    "10.0": {
+      "estatus": "En Proceso"
+    },
+    "5.3a": {
+      "estatus": "En Proceso"
+    },
+    "5.3b": {
+      "area": "CISO / Seguridad / RRHH"
+    },
+    "9.1": {
+      "estatus": "Concluido"
+    }
+  },
+  "soa_empD": {
+    "5.1": {
+      "evidenciaOk": false,
+      "entregado": "Completado",
+      "aprobado": "Completado",
+      "estatus": "Implementado"
+    },
+    "5.2": {
+      "evidenciaOk": false,
+      "estatus": "Implementado"
+    }
+  },
+  "backlog_empD": [
+    {
+      "desc": "Ajustar el alcance del Sistema",
+      "resp": "",
+      "fecha": "",
+      "status": "Terminado",
+      "obs": "",
+      "created": "2026-03-25T22:49:31.097Z"
+    },
+    {
+      "desc": "Generar documento de política independiente a lo redactado en el manual",
+      "resp": "Procesia",
+      "fecha": "2026-03-11",
+      "status": "Terminado",
+      "obs": "Se comparte documento independiente para su revisión",
+      "created": "2026-03-24T07:39:12.261Z"
+    },
+    {
+      "desc": "Omitir del manual del sistema, aquellas referencias en alcance a la república, o servicios nacionales",
+      "resp": "Procesia",
+      "fecha": "2026-03-17",
+      "status": "Terminado",
+      "obs": "Se actualiza el manual",
+      "created": "2026-03-24T07:38:16.144Z"
+    }
+  ],
+  "names": {},
+  "timestamp": "2026-04-23T03:46:50.138Z"
+}
